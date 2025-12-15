@@ -82,7 +82,7 @@ class SignClassifier:
             if temp_path and os.path.exists(temp_path):
                 try:
                     os.remove(temp_path)
-                except:
+                except OSError:
                     pass
     
     def _classify_type(self, img_data: str) -> str:

@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Callable
 import time
+import threading
 
 from ..config import get_config
 from ..utils import (
@@ -48,8 +49,9 @@ class ParallelProcessor:
         self.api_key = api_key or self.config.api_key
         self.workers = workers
         self.use_rag = use_rag
-        
-        # 统计数据
+
+        # 统计数据（线程安全）
+        self._stats_lock = threading.Lock()
         self.stats = {
             "pedestrian": 0,
             "vehicle": 0,
@@ -123,11 +125,12 @@ class ParallelProcessor:
                         progress.update(image_name, success=False, message=error)
                         results["failed"] += 1
                     else:
-                        # 更新统计
-                        for det in detections:
-                            category = det.get("category", "unknown")
-                            self.stats[category] = self.stats.get(category, 0) + 1
-                            results["total_objects"] += 1
+                        # 更新统计（线程安全）
+                        with self._stats_lock:
+                            for det in detections:
+                                category = det.get("category", "unknown")
+                                self.stats[category] = self.stats.get(category, 0) + 1
+                                results["total_objects"] += 1
                         
                         # 保存标注
                         self._save_result(detections, image_path, output_dir)

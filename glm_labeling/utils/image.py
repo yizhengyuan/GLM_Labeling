@@ -106,28 +106,40 @@ def image_to_base64(image_path: str) -> str:
 
 
 def convert_normalized_coords(
-    bbox: list, 
-    width: int, 
-    height: int, 
+    bbox: list,
+    width: int,
+    height: int,
     base: int = 1000
 ) -> list:
     """
     将归一化坐标转换为绝对像素坐标
-    
+
     GLM 模型输出的坐标是 0-1000 的归一化值
-    
+
     Args:
         bbox: 归一化边界框 [x1, y1, x2, y2]
         width: 图片宽度
         height: 图片高度
         base: 归一化基数（默认 1000）
-        
+
     Returns:
-        绝对像素坐标 [x1, y1, x2, y2]
+        绝对像素坐标 [x1, y1, x2, y2]，已校验边界
     """
-    return [
-        int(round(bbox[0] / base * width)),
-        int(round(bbox[1] / base * height)),
-        int(round(bbox[2] / base * width)),
-        int(round(bbox[3] / base * height))
-    ]
+    x1 = int(round(bbox[0] / base * width))
+    y1 = int(round(bbox[1] / base * height))
+    x2 = int(round(bbox[2] / base * width))
+    y2 = int(round(bbox[3] / base * height))
+
+    # 边界校验：确保坐标在有效范围内
+    x1 = max(0, min(x1, width))
+    y1 = max(0, min(y1, height))
+    x2 = max(0, min(x2, width))
+    y2 = max(0, min(y2, height))
+
+    # 确保 x1 < x2, y1 < y2
+    if x1 > x2:
+        x1, x2 = x2, x1
+    if y1 > y2:
+        y1, y2 = y2, y1
+
+    return [x1, y1, x2, y2]

@@ -4,6 +4,7 @@
 封装 GLM-4.6V 目标检测逻辑。
 """
 
+import os
 import re
 from typing import List, Dict, Any, Optional
 from zai import ZaiClient
@@ -101,19 +102,35 @@ class ObjectDetector:
     def detect(self, image_path: str, prompt: str = None) -> List[Dict[str, Any]]:
         """
         检测图片中的目标
-        
+
         Args:
             image_path: 图片路径
             prompt: 自定义 prompt（可选）
-            
+
         Returns:
             检测结果列表，每个元素包含 label, category, bbox
+
+        Raises:
+            FileNotFoundError: 图片文件不存在
+            ValueError: 图片文件过大
         """
+        # 输入验证
+        if not os.path.exists(image_path):
+            raise FileNotFoundError(f"图片文件不存在: {image_path}")
+
+        file_size = os.path.getsize(image_path)
+        max_size = getattr(self.config, 'max_image_size', 20 * 1024 * 1024)  # 默认 20MB
+        if file_size > max_size:
+            raise ValueError(f"图片文件过大: {file_size / 1024 / 1024:.1f}MB (最大 {max_size / 1024 / 1024:.0f}MB)")
+
         base64_url = image_to_base64_url(image_path)
         width, height = get_image_size(image_path)
         
         detection_prompt = prompt or DETECTION_PROMPT
-        
+
+        # API 超时设置
+        timeout = getattr(self.config, 'api_timeout', 60)
+
         def call_api():
             return self.client.chat.completions.create(
                 model=self.model_name,
@@ -123,7 +140,8 @@ class ObjectDetector:
                         {"type": "image_url", "image_url": {"url": base64_url}},
                         {"type": "text", "text": detection_prompt}
                     ]
-                }]
+                }],
+                timeout=timeout
             )
         
         try:
