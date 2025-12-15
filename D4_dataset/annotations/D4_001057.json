@@ -1,0 +1,67 @@
+{
+  "version": "0.4.1",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "van",
+      "text": "van",
+      "points": [
+        [
+          257,
+          261
+        ],
+        [
+          493,
+          397
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "car",
+      "text": "car",
+      "points": [
+        [
+          572,
+          312
+        ],
+        [
+          604,
+          333
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "traffic_cone",
+      "text": "traffic_cone",
+      "points": [
+        [
+          0,
+          306
+        ],
+        [
+          38,
+          348
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "construction"
+      }
+    }
+  ],
+  "imagePath": "D4_001057.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280
+}

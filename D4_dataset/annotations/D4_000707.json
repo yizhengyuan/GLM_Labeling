@@ -1,0 +1,124 @@
+{
+  "version": "0.4.1",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "car",
+      "text": "car",
+      "points": [
+        [
+          402,
+          300
+        ],
+        [
+          626,
+          428
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "car",
+      "text": "car",
+      "points": [
+        [
+          897,
+          250
+        ],
+        [
+          1206,
+          354
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "car",
+      "text": "car",
+      "points": [
+        [
+          855,
+          240
+        ],
+        [
+          1279,
+          538
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "car",
+      "text": "car",
+      "points": [
+        [
+          754,
+          287
+        ],
+        [
+          810,
+          322
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "car",
+      "text": "car",
+      "points": [
+        [
+          613,
+          292
+        ],
+        [
+          660,
+          333
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "car",
+      "text": "car",
+      "points": [
+        [
+          701,
+          292
+        ],
+        [
+          739,
+          312
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    }
+  ],
+  "imagePath": "D4_000707.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280
+}

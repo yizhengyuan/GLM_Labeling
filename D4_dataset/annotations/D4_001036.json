@@ -1,0 +1,124 @@
+{
+  "version": "0.4.1",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "car",
+      "text": "car",
+      "points": [
+        [
+          0,
+          201
+        ],
+        [
+          534,
+          558
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "car",
+      "text": "car",
+      "points": [
+        [
+          585,
+          287
+        ],
+        [
+          800,
+          474
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "car",
+      "text": "car",
+      "points": [
+        [
+          503,
+          317
+        ],
+        [
+          594,
+          397
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "traffic_sign",
+      "text": "traffic_sign",
+      "points": [
+        [
+          855,
+          171
+        ],
+        [
+          905,
+          241
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "traffic_sign"
+      }
+    },
+    {
+      "label": "traffic_cone",
+      "text": "traffic_cone",
+      "points": [
+        [
+          859,
+          306
+        ],
+        [
+          893,
+          402
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "construction"
+      }
+    },
+    {
+      "label": "traffic_cone",
+      "text": "traffic_cone",
+      "points": [
+        [
+          893,
+          310
+        ],
+        [
+          928,
+          412
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "construction"
+      }
+    }
+  ],
+  "imagePath": "D4_001036.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280
+}

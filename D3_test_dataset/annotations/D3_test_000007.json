@@ -1,0 +1,86 @@
+{
+  "version": "0.4.1",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "pedestrian",
+      "text": "pedestrian",
+      "points": [
+        [
+          730,
+          461
+        ],
+        [
+          768,
+          533
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "pedestrian"
+      }
+    },
+    {
+      "label": "vehicle",
+      "text": "vehicle",
+      "points": [
+        [
+          1050,
+          468
+        ],
+        [
+          1275,
+          636
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "traffic_sign",
+      "text": "traffic_sign",
+      "points": [
+        [
+          755,
+          310
+        ],
+        [
+          832,
+          346
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "traffic_sign"
+      }
+    },
+    {
+      "label": "construction_barrier",
+      "text": "construction_barrier",
+      "points": [
+        [
+          620,
+          526
+        ],
+        [
+          940,
+          871
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "construction"
+      }
+    }
+  ],
+  "imagePath": "D3_test_000007.jpg",
+  "imageData": null,
+  "imageHeight": 1440,
+  "imageWidth": 2560
+}

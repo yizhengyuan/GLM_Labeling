@@ -1,0 +1,124 @@
+{
+  "version": "0.4.1",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "traffic_sign",
+      "text": "traffic_sign",
+      "points": [
+        [
+          179,
+          115
+        ],
+        [
+          358,
+          295
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "traffic_sign"
+      }
+    },
+    {
+      "label": "truck",
+      "text": "truck",
+      "points": [
+        [
+          563,
+          223
+        ],
+        [
+          704,
+          403
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "car",
+      "text": "car",
+      "points": [
+        [
+          806,
+          281
+        ],
+        [
+          1279,
+          490
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "car",
+      "text": "car",
+      "points": [
+        [
+          730,
+          324
+        ],
+        [
+          794,
+          364
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "van",
+      "text": "van",
+      "points": [
+        [
+          941,
+          241
+        ],
+        [
+          1279,
+          331
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "pedestrian",
+      "text": "pedestrian",
+      "points": [
+        [
+          531,
+          331
+        ],
+        [
+          550,
+          374
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "pedestrian"
+      }
+    }
+  ],
+  "imagePath": "D4_000172.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280
+}

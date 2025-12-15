@@ -1,0 +1,67 @@
+{
+  "version": "0.4.1",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "pedestrian",
+      "text": "pedestrian",
+      "points": [
+        [
+          1030,
+          306
+        ],
+        [
+          1050,
+          343
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "pedestrian"
+      }
+    },
+    {
+      "label": "truck",
+      "text": "truck",
+      "points": [
+        [
+          0,
+          144
+        ],
+        [
+          582,
+          611
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "car_braking",
+      "text": "car_braking",
+      "points": [
+        [
+          686,
+          253
+        ],
+        [
+          993,
+          494
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    }
+  ],
+  "imagePath": "D4_000246.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280
+}

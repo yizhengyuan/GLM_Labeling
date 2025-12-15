@@ -1,0 +1,67 @@
+{
+  "version": "0.4.1",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "pedestrian",
+      "text": "pedestrian",
+      "points": [
+        [
+          352,
+          191
+        ],
+        [
+          435,
+          317
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "pedestrian"
+      }
+    },
+    {
+      "label": "pedestrian",
+      "text": "pedestrian",
+      "points": [
+        [
+          448,
+          271
+        ],
+        [
+          467,
+          318
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "pedestrian"
+      }
+    },
+    {
+      "label": "construction_barrier",
+      "text": "construction_barrier",
+      "points": [
+        [
+          0,
+          256
+        ],
+        [
+          166,
+          553
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "construction"
+      }
+    }
+  ],
+  "imagePath": "D4_001309.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280
+}

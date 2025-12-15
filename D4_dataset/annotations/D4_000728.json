@@ -1,0 +1,67 @@
+{
+  "version": "0.4.1",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "taxi",
+      "text": "taxi",
+      "points": [
+        [
+          669,
+          292
+        ],
+        [
+          763,
+          370
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "van",
+      "text": "van",
+      "points": [
+        [
+          763,
+          295
+        ],
+        [
+          850,
+          349
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "car",
+      "text": "car",
+      "points": [
+        [
+          573,
+          306
+        ],
+        [
+          623,
+          346
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    }
+  ],
+  "imagePath": "D4_000728.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280
+}

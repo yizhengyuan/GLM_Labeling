@@ -1,0 +1,105 @@
+{
+  "version": "0.4.1",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "pedestrian",
+      "text": "pedestrian",
+      "points": [
+        [
+          365,
+          328
+        ],
+        [
+          398,
+          391
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "pedestrian"
+      }
+    },
+    {
+      "label": "bus",
+      "text": "bus",
+      "points": [
+        [
+          572,
+          268
+        ],
+        [
+          634,
+          351
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "bus",
+      "text": "bus",
+      "points": [
+        [
+          628,
+          264
+        ],
+        [
+          722,
+          372
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "car",
+      "text": "car",
+      "points": [
+        [
+          736,
+          297
+        ],
+        [
+          824,
+          352
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "traffic_sign",
+      "text": "traffic_sign",
+      "points": [
+        [
+          1158,
+          264
+        ],
+        [
+          1196,
+          284
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "traffic_sign"
+      }
+    }
+  ],
+  "imagePath": "D4_000318.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280
+}

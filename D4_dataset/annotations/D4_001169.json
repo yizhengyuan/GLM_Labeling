@@ -1,0 +1,67 @@
+{
+  "version": "0.4.1",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "bus",
+      "text": "bus",
+      "points": [
+        [
+          0,
+          68
+        ],
+        [
+          499,
+          493
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "bus",
+      "text": "bus",
+      "points": [
+        [
+          506,
+          263
+        ],
+        [
+          631,
+          371
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "bus",
+      "text": "bus",
+      "points": [
+        [
+          659,
+          292
+        ],
+        [
+          736,
+          389
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    }
+  ],
+  "imagePath": "D4_001169.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280
+}

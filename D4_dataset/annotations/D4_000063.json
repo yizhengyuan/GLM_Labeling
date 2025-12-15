@@ -1,0 +1,48 @@
+{
+  "version": "0.4.1",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "pedestrian",
+      "text": "pedestrian",
+      "points": [
+        [
+          589,
+          269
+        ],
+        [
+          609,
+          298
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "pedestrian"
+      }
+    },
+    {
+      "label": "pedestrian",
+      "text": "pedestrian",
+      "points": [
+        [
+          594,
+          271
+        ],
+        [
+          614,
+          300
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "pedestrian"
+      }
+    }
+  ],
+  "imagePath": "D4_000063.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280
+}

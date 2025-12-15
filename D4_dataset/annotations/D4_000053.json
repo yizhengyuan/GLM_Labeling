@@ -1,0 +1,29 @@
+{
+  "version": "0.4.1",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "construction_barrier",
+      "text": "construction_barrier",
+      "points": [
+        [
+          454,
+          171
+        ],
+        [
+          1279,
+          297
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "construction"
+      }
+    }
+  ],
+  "imagePath": "D4_000053.jpg",
+  "imageData": null,
+  "imageHeight": 720,
+  "imageWidth": 1280
+}

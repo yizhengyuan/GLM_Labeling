@@ -24,7 +24,7 @@ class TrafficSignRAG:
     """交通标志 RAG 检索与分类器"""
     
     def __init__(self, 
-                 signs_dir: str = "examples/signs/highres/png2560px",
+                 signs_dir: str = "traffic_sign_data/images/signs/highres/png2560px",
                  db_path: str = ".chromadb"):
         """
         初始化 RAG 分类器

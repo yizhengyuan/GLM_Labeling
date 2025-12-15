@@ -1,0 +1,105 @@
+{
+  "version": "0.4.1",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "vehicle",
+      "text": "vehicle",
+      "points": [
+        [
+          1280,
+          504
+        ],
+        [
+          1510,
+          677
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "vehicle",
+      "text": "vehicle",
+      "points": [
+        [
+          678,
+          569
+        ],
+        [
+          819,
+          770
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "vehicle",
+      "text": "vehicle",
+      "points": [
+        [
+          1485,
+          518
+        ],
+        [
+          1613,
+          569
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "vehicle",
+      "text": "vehicle",
+      "points": [
+        [
+          1741,
+          490
+        ],
+        [
+          1894,
+          547
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "Warning_sign",
+      "text": "Warning_sign",
+      "points": [
+        [
+          858,
+          446
+        ],
+        [
+          909,
+          490
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "traffic_sign"
+      }
+    }
+  ],
+  "imagePath": "D3_test_000015.jpg",
+  "imageData": null,
+  "imageHeight": 1440,
+  "imageWidth": 2560
+}

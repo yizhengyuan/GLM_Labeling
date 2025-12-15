@@ -1,0 +1,124 @@
+{
+  "version": "0.4.1",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "pedestrian",
+      "text": "pedestrian",
+      "points": [
+        [
+          1971,
+          655
+        ],
+        [
+          2010,
+          742
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "pedestrian"
+      }
+    },
+    {
+      "label": "vehicle",
+      "text": "vehicle",
+      "points": [
+        [
+          269,
+          392
+        ],
+        [
+          760,
+          616
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "vehicle",
+      "text": "vehicle",
+      "points": [
+        [
+          978,
+          478
+        ],
+        [
+          1498,
+          732
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "vehicle",
+      "text": "vehicle",
+      "points": [
+        [
+          1580,
+          468
+        ],
+        [
+          1736,
+          694
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "vehicle",
+      "text": "vehicle",
+      "points": [
+        [
+          1754,
+          626
+        ],
+        [
+          1915,
+          742
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "Prohibition_sign",
+      "text": "Prohibition_sign",
+      "points": [
+        [
+          2330,
+          583
+        ],
+        [
+          2394,
+          641
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "traffic_sign"
+      }
+    }
+  ],
+  "imagePath": "D3_test_000028.jpg",
+  "imageData": null,
+  "imageHeight": 1440,
+  "imageWidth": 2560
+}

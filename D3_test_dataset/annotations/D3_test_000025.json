@@ -1,0 +1,86 @@
+{
+  "version": "0.4.1",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "crowd",
+      "text": "crowd",
+      "points": [
+        [
+          1979,
+          662
+        ],
+        [
+          2555,
+          893
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "pedestrian"
+      }
+    },
+    {
+      "label": "vehicle",
+      "text": "vehicle",
+      "points": [
+        [
+          474,
+          446
+        ],
+        [
+          1011,
+          727
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "vehicle",
+      "text": "vehicle",
+      "points": [
+        [
+          1037,
+          511
+        ],
+        [
+          1531,
+          756
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "Direction_sign",
+      "text": "Direction_sign",
+      "points": [
+        [
+          307,
+          0
+        ],
+        [
+          717,
+          216
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "traffic_sign"
+      }
+    }
+  ],
+  "imagePath": "D3_test_000025.jpg",
+  "imageData": null,
+  "imageHeight": 1440,
+  "imageWidth": 2560
+}

@@ -1,0 +1,86 @@
+{
+  "version": "0.4.1",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "vehicle_braking",
+      "text": "vehicle_braking",
+      "points": [
+        [
+          1339,
+          482
+        ],
+        [
+          1554,
+          645
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "vehicle",
+      "text": "vehicle",
+      "points": [
+        [
+          1011,
+          573
+        ],
+        [
+          1221,
+          685
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "Warning_sign",
+      "text": "Warning_sign",
+      "points": [
+        [
+          1613,
+          59
+        ],
+        [
+          1787,
+          184
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "traffic_sign"
+      }
+    },
+    {
+      "label": "Direction_sign",
+      "text": "Direction_sign",
+      "points": [
+        [
+          1825,
+          444
+        ],
+        [
+          1956,
+          665
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "traffic_sign"
+      }
+    }
+  ],
+  "imagePath": "D3_test_000020.jpg",
+  "imageData": null,
+  "imageHeight": 1440,
+  "imageWidth": 2560
+}

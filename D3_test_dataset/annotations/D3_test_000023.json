@@ -1,0 +1,105 @@
+{
+  "version": "0.4.1",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "crowd",
+      "text": "crowd",
+      "points": [
+        [
+          1754,
+          626
+        ],
+        [
+          2227,
+          814
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "pedestrian"
+      }
+    },
+    {
+      "label": "vehicle_turning_left",
+      "text": "vehicle_turning_left",
+      "points": [
+        [
+          678,
+          464
+        ],
+        [
+          1208,
+          763
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "vehicle",
+      "text": "vehicle",
+      "points": [
+        [
+          1196,
+          526
+        ],
+        [
+          1600,
+          770
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "vehicle"
+      }
+    },
+    {
+      "label": "Direction_sign",
+      "text": "Direction_sign",
+      "points": [
+        [
+          563,
+          151
+        ],
+        [
+          748,
+          288
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "traffic_sign"
+      }
+    },
+    {
+      "label": "Prohibition_sign",
+      "text": "Prohibition_sign",
+      "points": [
+        [
+          2368,
+          490
+        ],
+        [
+          2452,
+          583
+        ]
+      ],
+      "group_id": null,
+      "shape_type": "rectangle",
+      "flags": {
+        "category": "traffic_sign"
+      }
+    }
+  ],
+  "imagePath": "D3_test_000023.jpg",
+  "imageData": null,
+  "imageHeight": 1440,
+  "imageWidth": 2560
+}
