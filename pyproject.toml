@@ -1,0 +1,67 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "glm-labeling"
+version = "0.2.0"
+description = "GLM-4.6V 交通场景自动标注系统"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "GLM_Labeling Team"}
+]
+keywords = ["glm", "labeling", "annotation", "traffic", "autonomous-driving"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+requires-python = ">=3.10"
+
+dependencies = [
+    "zai-sdk>=0.1.0",
+    "Pillow>=9.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+]
+rag = [
+    "chromadb>=0.4.0",
+    "sentence-transformers>=2.2.0",
+]
+
+[project.scripts]
+glm-label = "glm_labeling.cli.label:main"
+
+[project.urls]
+Homepage = "https://github.com/yizhengyuan/GLM_Labeling"
+Repository = "https://github.com/yizhengyuan/GLM_Labeling"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["glm_labeling*"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --tb=short"
