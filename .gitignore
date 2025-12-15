@@ -8,6 +8,7 @@ __pycache__/
 # 忽略测试图片和输出（太大）
 test_images/
 output/
+temp_frames/
 D1_dataset/
 traffic_sign_data/
 
