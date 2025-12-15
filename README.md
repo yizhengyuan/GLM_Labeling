@@ -13,7 +13,7 @@
 ## 🔄 核心流程
 
 <p align="center">
-  <img src="GLM_Labeling_Manner_1.png" alt="GLM-4.6V 自动标注流程" width="800">
+  <img src="pictures/GLM_Labeling_Manner_1.png" alt="GLM-4.6V 自动标注流程" width="800">
 </p>
 
 ### 1️⃣ 数据准备 (Data Preparation)
@@ -37,7 +37,7 @@
 对于交通标志的细粒度分类，本项目采用 **RAG（检索增强生成）** 技术，实现对 188 种标准交通标志的精准识别。
 
 <p align="center">
-  <img src="GLM_Labeling_Manner_2_new.png" alt="RAG 细粒度分类流程" width="800">
+  <img src="pictures/GLM_Labeling_Manner_2_new.png" alt="RAG 细粒度分类流程" width="800">
 </p>
 
 ### 核心流程
