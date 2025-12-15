@@ -14,6 +14,7 @@ import json
 import base64
 import argparse
 import time
+import uuid  # 用于生成唯一文件名，避免多线程冲突
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from PIL import Image
@@ -71,17 +72,139 @@ def get_image_size(image_path: str) -> tuple:
 # 单张图片处理函数（用于并行）
 # ============================================================================
 
+def classify_sign_rag(client, image_path: str, bbox: list) -> str:
+    """RAG 二阶段交通标志精排（线程安全版）"""
+    import re
+    
+    temp_path = None  # 确保 finally 块可以访问
+    
+    try:
+        img = Image.open(image_path)
+        padding = 10
+        x1 = max(0, bbox[0] - padding)
+        y1 = max(0, bbox[1] - padding)
+        x2 = min(img.width, bbox[2] + padding)
+        y2 = min(img.height, bbox[3] + padding)
+        
+        sign_crop = img.crop((x1, y1, x2, y2))
+        # 使用 uuid 生成唯一文件名，避免多线程冲突
+        unique_id = uuid.uuid4()
+        temp_path = f"/tmp/sign_crop_{unique_id}.jpg"
+        sign_crop.save(temp_path, "JPEG")
+        
+        with open(temp_path, "rb") as f:
+            img_data = base64.b64encode(f.read()).decode()
+        
+        # 阶段1：判断类型
+        type_prompt = """请判断这是什么类型的交通标志：
+1. 限速标志（红圈白底，中间有数字）
+2. 禁止标志（红圈）
+3. 警告标志（三角形）
+4. 指示/方向标志（蓝色或绿色）
+5. 其他
+
+只返回数字（1-5）。"""
+        
+        response1 = client.chat.completions.create(
+            model="glm-4.6v",
+            messages=[{
+                "role": "user",
+                "content": [
+                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_data}"}},
+                    {"type": "text", "text": type_prompt}
+                ]
+            }],
+            temperature=0.1
+        )
+        
+        type_response = response1.choices[0].message.content.strip()
+        type_match = re.search(r'[1-5]', type_response)
+        
+        if not type_match:
+            return "traffic_sign"
+        
+        sign_type = type_match.group()
+        
+        # 阶段2：细节识别
+        if sign_type == "1":  # 限速
+            detail_prompt = "请识别这个限速标志上的数字。只返回数字。"
+            response2 = client.chat.completions.create(
+                model="glm-4.6v",
+                messages=[{
+                    "role": "user",
+                    "content": [
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_data}"}},
+                        {"type": "text", "text": detail_prompt}
+                    ]
+                }],
+                temperature=0.1
+            )
+            numbers = re.findall(r'\d+', response2.choices[0].message.content)
+            if numbers:
+                return f"Speed_limit_{numbers[0]}_km_h"
+            return "Speed_limit"
+        
+        elif sign_type == "4":  # 方向/指示
+            # 检测是否为距离牌
+            detail_prompt = """这是一个指示或方向标志。请判断：
+1. 方向指示牌
+2. 高速公路标志
+3. 倒计时距离牌（100m/200m/300m斜条）
+4. 其他
+
+只返回数字（1-4）。"""
+            response2 = client.chat.completions.create(
+                model="glm-4.6v",
+                messages=[{
+                    "role": "user",
+                    "content": [
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_data}"}},
+                        {"type": "text", "text": detail_prompt}
+                    ]
+                }],
+                temperature=0.1
+            )
+            detail = re.search(r'[1-4]', response2.choices[0].message.content)
+            if detail:
+                label_map = {
+                    "1": "Direction_sign",
+                    "2": "Expressway_sign",
+                    "3": "100m_Countdown_markers",
+                    "4": "Direction_other"
+                }
+                return label_map.get(detail.group(), "Direction_sign")
+            return "Direction_sign"
+        
+        type_labels = {
+            "2": "Prohibition_sign",
+            "3": "Warning_sign",
+            "5": "traffic_sign"
+        }
+        return type_labels.get(sign_type, "traffic_sign")
+        
+    except Exception as e:
+        return "traffic_sign"
+    
+    finally:
+        # ✅ 清理临时文件，防止磁盘空间泄漏
+        if temp_path and os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except:
+                pass  # 忽略删除失败
+
+
 def process_single_image(args_tuple):
     """
     处理单张图片（线程安全）
     
     Args:
-        args_tuple: (image_path, api_key, max_retries)
+        args_tuple: (image_path, api_key, max_retries, use_rag)
     
     Returns:
         (image_path, detections, error)
     """
-    image_path, api_key, max_retries = args_tuple
+    image_path, api_key, max_retries, use_rag = args_tuple
     
     try:
         # 每个线程创建自己的 client
@@ -161,6 +284,11 @@ def process_single_image(args_tuple):
                     label = det["label"].lower().replace(" ", "_").replace("-", "_")
                     category = get_category(label)
                     
+                    # RAG 细粒度分类（仅交通标志）
+                    if use_rag and category == "traffic_sign" and label in ["traffic_sign", "sign"]:
+                        label = classify_sign_rag(client, image_path, bbox)
+                        category = "traffic_sign"
+                    
                     processed.append({
                         "label": label,
                         "category": category,
@@ -171,10 +299,12 @@ def process_single_image(args_tuple):
                 
             except json.JSONDecodeError:
                 if attempt < max_retries - 1:
+                    time.sleep(2 * (attempt + 1))  # 指数退避
                     continue
                 return (image_path, [], "JSON parse error")
             except Exception as e:
                 if attempt < max_retries - 1:
+                    time.sleep(2 * (attempt + 1))  # 指数退避，避免 429 错误
                     continue
                 return (image_path, [], str(e))
         
@@ -226,6 +356,7 @@ def main():
     parser.add_argument("--prefix", type=str, required=True, help="图片前缀 (如 D1, D2)")
     parser.add_argument("--limit", type=int, default=None, help="限制处理数量")
     parser.add_argument("--workers", type=int, default=5, help="并行线程数 (默认 5)")
+    parser.add_argument("--rag", action="store_true", help="启用 RAG 细粒度分类")
     parser.add_argument("--images-dir", type=str, default="test_images/extracted_frames")
     args = parser.parse_args()
     
@@ -247,17 +378,19 @@ def main():
         return
     
     # 创建输出目录
-    output_dir = Path(f"output/{args.prefix.lower()}_annotations_parallel")
+    rag_suffix = "_rag" if args.rag else ""
+    output_dir = Path(f"output/{args.prefix.lower()}_annotations{rag_suffix}")
     output_dir.mkdir(parents=True, exist_ok=True)
     
     # 准备参数
     width, height = get_image_size(str(image_files[0]))
-    task_args = [(str(img), api_key, 3) for img in image_files]
+    task_args = [(str(img), api_key, 3, args.rag) for img in image_files]
     
     print("=" * 70)
     print(f"🚀 并行自动标注 - {args.prefix} series")
     print(f"   📁 Images: {len(image_files)} | Resolution: {width}x{height}")
     print(f"   🔧 Workers: {args.workers} 个并行线程")
+    print(f"   🔍 RAG Mode: {'✅ Enabled' if args.rag else '❌ Disabled'}")
     print("=" * 70)
     
     start_time = time.time()
