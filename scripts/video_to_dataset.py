@@ -405,7 +405,10 @@ def create_dataset(video_name: str, frames_dir: Path, annotations_dir: Path, vis
     
     print(f"\n📦 Step 4: 创建 Dataset")
     
-    dataset_dir = Path(f"{video_name}_dataset")
+    # 输出到 dataset_output 目录下
+    output_base = Path("dataset_output")
+    output_base.mkdir(parents=True, exist_ok=True)
+    dataset_dir = output_base / f"{video_name}_dataset"
     
     # 创建目录结构
     (dataset_dir / "video").mkdir(parents=True, exist_ok=True)
@@ -463,11 +466,12 @@ def create_dataset(video_name: str, frames_dir: Path, annotations_dir: Path, vis
         json.dump(stats_json, f, ensure_ascii=False, indent=2)
     print(f"   ✅ 生成 stats.json")
     
-    # 生成压缩包
+    # 生成压缩包（放在 dataset_output 目录下）
     print(f"   📦 创建压缩包...")
-    shutil.make_archive(str(dataset_dir), 'zip', '.', str(dataset_dir))
-    zip_size = Path(f"{dataset_dir}.zip").stat().st_size / (1024 * 1024)
-    print(f"   ✅ {dataset_dir}.zip ({zip_size:.1f} MB)")
+    zip_path = output_base / f"{video_name}_dataset.zip"
+    shutil.make_archive(str(dataset_dir), 'zip', str(output_base), f"{video_name}_dataset")
+    zip_size = zip_path.stat().st_size / (1024 * 1024)
+    print(f"   ✅ {zip_path} ({zip_size:.1f} MB)")
     
     return dataset_dir
 
