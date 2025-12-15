@@ -55,6 +55,47 @@ def get_category(label: str) -> str:
     return "unknown"
 
 
+def normalize_vehicle_label(label: str) -> str:
+    """
+    将所有车辆类型标签规范化为 vehicle 格式
+    例如: car_braking -> vehicle_braking, motorcycle -> vehicle
+    """
+    label_lower = label.lower().replace(" ", "_").replace("-", "_")
+    
+    # 车辆基础类型列表
+    vehicle_types = ["car", "truck", "bus", "van", "motorcycle", "bicycle", "taxi", "suv"]
+    
+    # 检查是否是车辆相关标签
+    for vtype in vehicle_types:
+        if label_lower.startswith(vtype):
+            # 提取状态后缀
+            suffix = label_lower[len(vtype):]
+            
+            # 如果有状态后缀（如 _braking, _turning_left 等）
+            if suffix in ["_braking", "_double_flash", "_turning_left", "_turning_right"]:
+                return "vehicle" + suffix
+            # 如果没有后缀或后缀不是标准状态
+            elif suffix == "" or suffix.startswith("_"):
+                # 检查是否包含状态关键词
+                if "braking" in suffix or "brake" in suffix:
+                    return "vehicle_braking"
+                elif "double_flash" in suffix or "hazard" in suffix:
+                    return "vehicle_double_flash"
+                elif "turning_left" in suffix or "turn_left" in suffix or "left_turn" in suffix:
+                    return "vehicle_turning_left"
+                elif "turning_right" in suffix or "turn_right" in suffix or "right_turn" in suffix:
+                    return "vehicle_turning_right"
+                else:
+                    return "vehicle"
+    
+    # 如果已经是 vehicle 格式，直接返回
+    if label_lower.startswith("vehicle"):
+        return label_lower
+    
+    # 其他情况返回原标签
+    return label
+
+
 def image_to_base64_url(image_path: str) -> str:
     with open(image_path, 'rb') as f:
         image_data = base64.b64encode(f.read()).decode('utf-8')
@@ -309,6 +350,10 @@ traffic_cone, construction_barrier
                     
                     label = det["label"].lower().replace(" ", "_").replace("-", "_")
                     category = get_category(label)
+                    
+                    # 车辆标签规范化：将 car/truck/bus 等统一转换为 vehicle 格式
+                    if category == "vehicle":
+                        label = normalize_vehicle_label(label)
                     
                     # RAG 细粒度分类（仅交通标志）
                     if use_rag and category == "traffic_sign" and label in ["traffic_sign", "sign"]:
