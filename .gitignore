@@ -1,0 +1,19 @@
+# 忽略大文件和临时文件
+*.mp4
+*.zip
+*.pyc
+__pycache__/
+.DS_Store
+
+# 忽略测试图片和输出（太大）
+test_images/
+output/
+D1_dataset/
+traffic_sign_data/
+
+# 保留示例
+!examples/
+
+# 环境文件
+.env
+venv/

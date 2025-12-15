@@ -1,0 +1,12 @@
+# Z.AI SDK (新版 GLM-4.6V API)
+zai-sdk>=0.0.4
+
+# 智谱 AI SDK (原版 API)  
+zhipuai>=2.0.0
+
+# 通用依赖
+python-dotenv>=1.0.0
+pillow>=10.0.0
+matplotlib>=3.7.0
+opencv-python>=4.8.0
+numpy>=1.24.0
