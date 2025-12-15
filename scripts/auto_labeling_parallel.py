@@ -216,20 +216,37 @@ def process_single_image(args_tuple):
         prompt = """请检测图片中的以下4类物体，返回JSON格式。
 
 ## 检测类别与细粒度要求：
-1. 行人：pedestrian, cyclist, child, crowd
-2. 车辆：car, truck, bus, motorcycle, bicycle, van, taxi（不要标注第一人称）
-   - 【重要】请观察尾灯状态（细粒度标注）：
-   - 如果尾灯显著高亮（红色刹车灯亮起），label 记为 "car_braking"
-   - 如果左侧灯比右侧亮或呈黄色/橙色，label 记为 "car_turn_left"
-   - 如果右侧灯比左侧亮或呈黄色/橙色，label 记为 "car_turn_right"
-   - 如果双侧黄色灯同时亮起（双闪），label 记为 "car_hazard_lights"
-   - 正常行驶或看不清尾灯状态，保持 "car"
-3. 交通标志：traffic_sign
-4. 施工标志：traffic_cone, construction_barrier
+
+### 1. 行人类 (pedestrian) - 2种标签
+- pedestrian: 单个或少量行人
+- crowd: 人群（多人聚集）
+
+### 2. 车辆类 (vehicle) - 5种标签
+统一使用 vehicle，只区分行驶状态：
+
+**状态判断规则**（按优先级）：
+1. **刹车状态**: 尾灯明显变亮、红色刹车灯亮起 → `vehicle_braking`
+2. **双闪状态**: 左右两侧转向灯同时亮起/闪烁 → `vehicle_double_flash`
+3. **右转状态**: 车身朝右/车头转向右侧/右转车道转弯/仅右侧转向灯亮 → `vehicle_turning_right`
+4. **左转状态**: 车身朝左/车头转向左侧/左转车道转弯/仅左侧转向灯亮 → `vehicle_turning_left`
+5. **正常状态**: 直行或无法判断 → `vehicle`
+
+注意：
+- 不要标注第一人称视角的车辆（拍摄车辆本身）
+- 所有机动车（轿车、卡车、公交、摩托车等）和自行车都统一标注为 vehicle
+
+### 3. 交通标志类 (traffic_sign)
+traffic_sign
+
+### 4. 施工标志类 (construction)
+traffic_cone, construction_barrier
 
 ## 返回格式示例：
 [
-  {"label": "car_braking", "bbox_2d": [100, 200, 300, 400]},
+  {"label": "vehicle_braking", "bbox_2d": [100, 200, 300, 400]},
+  {"label": "vehicle_double_flash", "bbox_2d": [400, 300, 600, 500]},
+  {"label": "vehicle_turning_left", "bbox_2d": [700, 200, 800, 400]},
+  {"label": "vehicle", "bbox_2d": [900, 300, 1100, 500]},
   {"label": "traffic_sign", "bbox_2d": [50, 50, 80, 80]}
 ]
 

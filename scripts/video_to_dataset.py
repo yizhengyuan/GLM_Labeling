@@ -231,7 +231,175 @@ def generate_visualizations(frames_dir: Path, annotations_dir: Path, video_name:
 # Step 4: 打包 Dataset
 # ============================================================================
 
-def create_dataset(video_name: str, frames_dir: Path, annotations_dir: Path, vis_dir: Path) -> Path:
+def generate_summary(annotations_dir: Path, video_name: str, frame_count: int, fps: int) -> dict:
+    """分析标注数据并生成统计信息"""
+    from collections import defaultdict
+    from datetime import datetime
+    
+    stats = {
+        "total_frames": frame_count,
+        "annotated_frames": 0,
+        "total_objects": 0,
+        "categories": defaultdict(int),
+        "subcategories": defaultdict(int),
+        "scene_events": defaultdict(list),  # 场景事件（刹车、转向等）
+        "frame_details": []
+    }
+    
+    # 遍历所有标注文件
+    for json_path in sorted(annotations_dir.glob("*.json")):
+        frame_name = json_path.stem
+        
+        with open(json_path, encoding="utf-8") as f:
+            data = json.load(f)
+        
+        shapes = data.get("shapes", [])
+        if shapes:
+            stats["annotated_frames"] += 1
+        
+        frame_info = {
+            "frame": frame_name,
+            "objects": len(shapes),
+            "categories": defaultdict(int),
+            "labels": []
+        }
+        
+        for shape in shapes:
+            stats["total_objects"] += 1
+            
+            # 主类别
+            category = shape.get("flags", {}).get("category", "unknown")
+            stats["categories"][category] += 1
+            frame_info["categories"][category] += 1
+            
+            # 标签（细分类别）
+            label = shape.get("label", "")
+            frame_info["labels"].append(label)
+            
+            # 统计子类别
+            if label:
+                stats["subcategories"][label] += 1
+            
+            # 检测场景事件
+            label_lower = label.lower()
+            if any(kw in label_lower for kw in ["brake", "braking", "刹车"]):
+                stats["scene_events"]["braking"].append(frame_name)
+            if any(kw in label_lower for kw in ["turn_left", "left_turn", "左转"]):
+                stats["scene_events"]["turn_left"].append(frame_name)
+            if any(kw in label_lower for kw in ["turn_right", "right_turn", "右转"]):
+                stats["scene_events"]["turn_right"].append(frame_name)
+            if any(kw in label_lower for kw in ["hazard", "emergency", "双闪"]):
+                stats["scene_events"]["hazard_lights"].append(frame_name)
+            if any(kw in label_lower for kw in ["crossing", "过马路"]):
+                stats["scene_events"]["pedestrian_crossing"].append(frame_name)
+        
+        stats["frame_details"].append(frame_info)
+    
+    return stats
+
+
+def create_summary_markdown(stats: dict, video_name: str, fps: int, use_rag: bool) -> str:
+    """生成 Markdown 格式的总结文档"""
+    from datetime import datetime
+    
+    lines = []
+    lines.append(f"# 📊 数据标注总结 - {video_name}")
+    lines.append("")
+    lines.append(f"**生成时间**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    lines.append(f"**抽帧率**: {fps} FPS")
+    lines.append(f"**RAG增强**: {'✅ 启用' if use_rag else '❌ 未启用'}")
+    lines.append("")
+    
+    # 概览统计
+    lines.append("## 📈 概览统计")
+    lines.append("")
+    lines.append(f"| 指标 | 数值 |")
+    lines.append(f"|------|------|")
+    lines.append(f"| 总帧数 | {stats['total_frames']} |")
+    lines.append(f"| 有标注的帧 | {stats['annotated_frames']} |")
+    lines.append(f"| 空帧（无检测） | {stats['total_frames'] - stats['annotated_frames']} |")
+    lines.append(f"| 总检测对象 | {stats['total_objects']} |")
+    if stats['annotated_frames'] > 0:
+        lines.append(f"| 平均每帧对象数 | {stats['total_objects'] / stats['annotated_frames']:.2f} |")
+    lines.append("")
+    
+    # 类别分布
+    lines.append("## 🏷️ 主类别分布")
+    lines.append("")
+    lines.append(f"| 类别 | 数量 | 占比 |")
+    lines.append(f"|------|------|------|")
+    total = stats['total_objects'] or 1
+    for cat, count in sorted(stats['categories'].items(), key=lambda x: -x[1]):
+        percentage = count / total * 100
+        lines.append(f"| {cat} | {count} | {percentage:.1f}% |")
+    lines.append("")
+    
+    # 细分类别 Top 20
+    if stats['subcategories']:
+        lines.append("## 🔍 细分类别 Top 20")
+        lines.append("")
+        lines.append(f"| 标签 | 数量 |")
+        lines.append(f"|------|------|")
+        for label, count in sorted(stats['subcategories'].items(), key=lambda x: -x[1])[:20]:
+            # 截断过长的标签
+            display_label = label[:50] + "..." if len(label) > 50 else label
+            lines.append(f"| {display_label} | {count} |")
+        lines.append("")
+    
+    # 场景事件
+    if any(stats['scene_events'].values()):
+        lines.append("## 🎬 场景事件检测")
+        lines.append("")
+        
+        event_names = {
+            "braking": "🛑 刹车场景",
+            "turn_left": "⬅️ 左转场景", 
+            "turn_right": "➡️ 右转场景",
+            "hazard_lights": "⚠️ 双闪/危险警告",
+            "pedestrian_crossing": "🚶 行人过马路"
+        }
+        
+        for event_key, event_name in event_names.items():
+            frames = stats['scene_events'].get(event_key, [])
+            if frames:
+                lines.append(f"### {event_name}")
+                lines.append(f"- **检测帧数**: {len(frames)}")
+                # 显示前10帧
+                sample_frames = frames[:10]
+                lines.append(f"- **示例帧**: {', '.join(sample_frames)}")
+                if len(frames) > 10:
+                    lines.append(f"- *(共 {len(frames)} 帧)*")
+                lines.append("")
+    
+    # 帧级别详情（采样显示）
+    lines.append("## 📋 帧级别详情（采样）")
+    lines.append("")
+    lines.append("仅显示有检测对象的帧（最多前50帧）：")
+    lines.append("")
+    lines.append(f"| 帧名 | 对象数 | 行人 | 车辆 | 交通标志 | 施工 |")
+    lines.append(f"|------|--------|------|------|----------|------|")
+    
+    shown = 0
+    for frame_info in stats['frame_details']:
+        if frame_info['objects'] > 0 and shown < 50:
+            cats = frame_info['categories']
+            lines.append(f"| {frame_info['frame']} | {frame_info['objects']} | "
+                        f"{cats.get('pedestrian', 0)} | {cats.get('vehicle', 0)} | "
+                        f"{cats.get('traffic_sign', 0)} | {cats.get('construction', 0)} |")
+            shown += 1
+    
+    if shown == 0:
+        lines.append("| (无检测对象) | - | - | - | - | - |")
+    
+    lines.append("")
+    lines.append("---")
+    lines.append(f"*此报告由 video_to_dataset.py 自动生成*")
+    
+    return "\n".join(lines)
+
+
+def create_dataset(video_name: str, frames_dir: Path, annotations_dir: Path, vis_dir: Path, 
+                   fps: int = 3, use_rag: bool = False) -> Path:
     """创建 Dataset 文件夹"""
     import shutil
     
@@ -252,9 +420,10 @@ def create_dataset(video_name: str, frames_dir: Path, annotations_dir: Path, vis
         print(f"   ✅ 复制视频")
     
     # 复制帧
+    frame_count = len(list(frames_dir.glob('*.jpg')))
     for frame in frames_dir.glob("*.jpg"):
         shutil.copy(frame, dataset_dir / "frames" / frame.name)
-    print(f"   ✅ 复制 {len(list(frames_dir.glob('*.jpg')))} 帧")
+    print(f"   ✅ 复制 {frame_count} 帧")
     
     # 复制标注
     for ann in annotations_dir.glob("*.json"):
@@ -266,6 +435,33 @@ def create_dataset(video_name: str, frames_dir: Path, annotations_dir: Path, vis
         for vis in vis_dir.glob("*.jpg"):
             shutil.copy(vis, dataset_dir / "visualized" / vis.name)
         print(f"   ✅ 复制 {len(list(vis_dir.glob('*.jpg')))} 可视化")
+    
+    # 生成总结文档
+    print(f"   📝 生成标注总结文档...")
+    stats = generate_summary(annotations_dir, video_name, frame_count, fps)
+    summary_md = create_summary_markdown(stats, video_name, fps, use_rag)
+    
+    summary_path = dataset_dir / "SUMMARY.md"
+    with open(summary_path, "w", encoding="utf-8") as f:
+        f.write(summary_md)
+    print(f"   ✅ 生成 SUMMARY.md")
+    
+    # 同时保存 JSON 格式的统计数据
+    stats_json = {
+        "video_name": video_name,
+        "total_frames": stats["total_frames"],
+        "annotated_frames": stats["annotated_frames"],
+        "total_objects": stats["total_objects"],
+        "categories": dict(stats["categories"]),
+        "subcategories": dict(stats["subcategories"]),
+        "scene_events": {k: len(v) for k, v in stats["scene_events"].items()},
+        "fps": fps,
+        "use_rag": use_rag
+    }
+    stats_path = dataset_dir / "stats.json"
+    with open(stats_path, "w", encoding="utf-8") as f:
+        json.dump(stats_json, f, ensure_ascii=False, indent=2)
+    print(f"   ✅ 生成 stats.json")
     
     # 生成压缩包
     print(f"   📦 创建压缩包...")
@@ -321,13 +517,15 @@ def main():
         vis_dir = generate_visualizations(frames_dir, annotations_dir, video_name)
     
     # Step 4: 打包
-    dataset_dir = create_dataset(video_name, frames_dir, annotations_dir, vis_dir)
+    dataset_dir = create_dataset(video_name, frames_dir, annotations_dir, vis_dir, 
+                                  fps=args.fps, use_rag=args.rag)
     
     # 完成
     total_time = time.time() - start_time
     print("\n" + "=" * 70)
     print(f"🎉 完成！总耗时: {total_time/60:.1f} 分钟")
     print(f"📁 Dataset: {dataset_dir}/")
+    print(f"📊 总结文档: {dataset_dir}/SUMMARY.md")
     print(f"📦 压缩包: {dataset_dir}.zip")
     print("=" * 70)
 
