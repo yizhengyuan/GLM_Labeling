@@ -61,7 +61,8 @@ class ParallelProcessor:
         self,
         image_paths: List[str],
         output_dir: Path,
-        on_complete: Optional[Callable] = None
+        on_complete: Optional[Callable] = None,
+        resume: bool = True
     ) -> Dict[str, Any]:
         """
         批量处理图片
@@ -70,12 +71,32 @@ class ParallelProcessor:
             image_paths: 图片路径列表
             output_dir: 输出目录
             on_complete: 单张完成回调 (path, detections, error) -> None
+            resume: 是否启用断点续传（跳过已处理的图片）
             
         Returns:
             处理结果统计
         """
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
+        
+        # 断点续传：过滤已处理的图片
+        if resume:
+            original_count = len(image_paths)
+            image_paths = self._filter_processed(image_paths, output_dir)
+            skipped = original_count - len(image_paths)
+            
+            if skipped > 0:
+                self.logger.info(f"📌 断点续传：跳过 {skipped} 张已处理图片")
+            
+            if not image_paths:
+                self.logger.info("✅ 所有图片已处理完成，无需重新运行")
+                return {
+                    "success": 0, 
+                    "failed": 0, 
+                    "skipped": skipped,
+                    "total_objects": 0,
+                    "stats": self.stats
+                }
         
         progress = TaskProgress(len(image_paths), "Parallel Detection")
         progress.start()
@@ -172,6 +193,35 @@ class ParallelProcessor:
         
         output_path = output_dir / f"{Path(image_path).stem}.json"
         save_annotation(annotation, output_path)
+    
+    def _filter_processed(
+        self,
+        image_paths: List[str],
+        output_dir: Path
+    ) -> List[str]:
+        """
+        过滤已处理的图片（断点续传）
+        
+        检查输出目录中是否已存在对应的 JSON 文件，
+        如果存在则认为该图片已处理，跳过。
+        
+        Args:
+            image_paths: 原始图片路径列表
+            output_dir: 输出目录
+            
+        Returns:
+            未处理的图片路径列表
+        """
+        unprocessed = []
+        
+        for path in image_paths:
+            json_name = f"{Path(path).stem}.json"
+            json_path = output_dir / json_name
+            
+            if not json_path.exists():
+                unprocessed.append(path)
+        
+        return unprocessed
 
 
 def process_images_parallel(

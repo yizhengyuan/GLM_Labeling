@@ -120,6 +120,13 @@ source venv/bin/activate   # macOS/Linux
 ```
 
 ### 2. 安装依赖
+
+**方式一：pip 安装（推荐）**
+```bash
+pip install -e .
+```
+
+**方式二：requirements.txt**
 ```bash
 pip install -r requirements.txt
 ```
@@ -130,25 +137,56 @@ export ZAI_API_KEY="your_api_key_here"
 ```
 
 ### 4. 运行标注
+
+**🆕 推荐方式：使用新的模块化接口**
+
 ```bash
-# 基础标注 - D1 系列图片
-python3 auto_labeling_universal.py --prefix D1
+# CLI 命令行（安装后可用）
+glm-label --prefix D2 --limit 50 --workers 5 --rag
 
-# RAG 增强标注（交通标志细粒度分类）
-python3 auto_labeling_rag.py --prefix D1 --rag
-
-# 两阶段精细分类（推荐，最准确）
-python3 two_stage_classifier.py --test test_images/extracted_frames/D1_frame_0006.jpg --bbox "733,270,776,300"
+# 或使用 Python 模块
+python3 -m glm_labeling.cli.label --prefix D2 --workers 10
 ```
 
-### 5. 生成可视化
+**传统脚本方式：**
 ```bash
-python3 visualize_universal.py --prefix D1
+# 基础标注
+python3 scripts/auto_labeling_universal.py --prefix D1
+
+# 并行标注（推荐，更快）
+python3 scripts/auto_labeling_parallel.py --prefix D1 --workers 5 --rag
 ```
 
-### 6. 生成报告
+### 5. Python API 使用
+
+```python
+# 方式一：使用便捷函数
+from glm_labeling import detect_objects, process_images_parallel
+
+# 单张图片检测
+results = detect_objects("image.jpg")
+
+# 批量并行处理（支持断点续传）
+stats = process_images_parallel(
+    ["img1.jpg", "img2.jpg"], 
+    output_dir="output/",
+    workers=5,
+    use_rag=True
+)
+
+# 方式二：使用类（更多控制）
+from glm_labeling import ObjectDetector, ParallelProcessor
+
+detector = ObjectDetector()
+results = detector.detect("image.jpg")
+
+processor = ParallelProcessor(workers=10, use_rag=True)
+processor.process_batch(images, output_dir)
+```
+
+### 6. 生成可视化
 ```bash
-python3 generate_report.py --prefix D1
+python3 scripts/visualize_universal.py --prefix D1
 ```
 
 ### 7. 退出虚拟环境
@@ -158,17 +196,37 @@ deactivate
 
 ---
 
-## 📁 项目文件说明
+## 📁 项目结构
 
-| 文件 | 说明 |
+```
+GLM_Labeling/
+├── glm_labeling/              # 🆕 核心 Python 包
+│   ├── config.py              # 统一配置管理
+│   ├── utils/                 # 工具模块（图像、JSON、日志）
+│   ├── core/                  # 核心功能
+│   │   ├── detector.py        # ObjectDetector 目标检测器
+│   │   ├── sign_classifier.py # SignClassifier 标志分类器
+│   │   └── parallel.py        # ParallelProcessor 并行处理器
+│   └── cli/                   # 命令行接口
+│       └── label.py           # glm-label 命令
+├── scripts/                   # 独立脚本（传统方式）
+│   ├── auto_labeling_parallel.py  # 并行标注脚本
+│   ├── auto_labeling_rag.py       # RAG 增强标注
+│   └── visualize_universal.py     # 可视化脚本
+├── tests/                     # 单元测试
+├── pyproject.toml             # 项目配置（pip install -e .）
+└── README.md
+```
+
+### 核心模块
+
+| 模块 | 说明 |
 |------|------|
-| `auto_labeling_universal.py` | 通用标注脚本，支持任意前缀的图片 |
-| `auto_labeling_rag.py` | RAG 增强标注，交通标志细粒度分类（188 种标准标志） |
-| `two_stage_classifier.py` | 两阶段分类器（推荐），先识别类型再识别细节 |
-| `visualize_universal.py` | 通用可视化脚本 |
-| `generate_report.py` | 标注报告生成脚本 |
-| `rag_sign_classifier.py` | RAG 向量库管理工具 |
-| `demo_rag_flow.py` | RAG 流程演示脚本 |
+| `glm_labeling.ObjectDetector` | 目标检测器，封装 GLM-4.6V 调用 |
+| `glm_labeling.SignClassifier` | 两阶段交通标志分类器 |
+| `glm_labeling.ParallelProcessor` | 批量并行处理，支持断点续传 |
+| `glm_labeling.utils` | 图像处理、JSON 解析、日志等工具 |
+| `glm-label` | 命令行工具（pip 安装后可用） |
 
 ---
 
