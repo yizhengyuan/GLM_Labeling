@@ -32,7 +32,7 @@ class Config:
     
     # 输入路径
     images_dir: Path = field(default_factory=lambda: Path("test_images/extracted_frames"))
-    signs_dir: Path = field(default_factory=lambda: Path("traffic_sign_data/images/signs/highres/png2560px"))
+    signs_dir: Path = field(default_factory=lambda: Path("raw_data/images/signs/highres/png2560px"))
     
     # 输出路径
     output_dir: Path = field(default_factory=lambda: Path("output"))

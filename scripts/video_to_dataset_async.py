@@ -37,12 +37,12 @@ API_BASE_URL = "https://api.z.ai/api/paas/v4"
 MODEL_NAME = "glm-4.6v"
 COORD_BASE = 1000  # GLM 输出坐标基数
 
-VIDEO_DIR = Path("traffic_sign_data/videos/clips")  # 默认查找切分后的片段
+VIDEO_DIR = Path("raw_data/videos/clips")  # 默认查找切分后的片段
 TEMP_FRAMES_DIR = Path("temp_frames")
 OUTPUT_BASE = Path("output")
 
 # 188 种交通标志候选库
-SIGNS_DIR = Path("traffic_sign_data/images/signs/highres/png2560px")
+SIGNS_DIR = Path("raw_data/images/signs/highres/png2560px")
 
 def load_sign_candidates():
     """从标志图片目录动态加载所有标志名称（188种）"""
@@ -792,7 +792,7 @@ def create_dataset(video_name: str, video_path: str, frames_dir: Path, annotatio
 
 async def main_async():
     parser = argparse.ArgumentParser(description="异步视频到数据集流水线")
-    parser.add_argument("--video", type=str, required=True, help="视频文件路径 (如 traffic_sign_data/videos/clips/D1/D1_000.mp4)")
+    parser.add_argument("--video", type=str, required=True, help="视频文件路径 (如 raw_data/videos/clips/D1/D1_000.mp4)")
     parser.add_argument("--name", type=str, default=None, help="输出名称 (默认使用视频文件名)")
     parser.add_argument("--fps", type=int, default=3, help="抽帧率 (默认 3)")
     parser.add_argument("--workers", type=int, default=15, help="并发数 (默认 15)")

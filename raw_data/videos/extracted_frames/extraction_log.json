@@ -1,0 +1,70 @@
+{
+  "extraction_summary": {
+    "total_frames": 1478,
+    "total_videos": 11,
+    "extraction_time": "2025-12-15T06:15:08.572743",
+    "parameters": {
+      "similarity_threshold": 0.8,
+      "max_frames_per_minute": 5,
+      "min_interval": 2,
+      "motion_threshold": 0.1
+    }
+  },
+  "video_statistics": {
+    "N6": {
+      "frame_count": 56,
+      "first_timestamp": 5.999993703081786,
+      "last_timestamp": 335.99964737258
+    },
+    "N7": {
+      "frame_count": 42,
+      "first_timestamp": 5.999991866547589,
+      "last_timestamp": 251.99965839499873
+    },
+    "D5": {
+      "frame_count": 86,
+      "first_timestamp": 5.99999976,
+      "last_timestamp": 515.99997936
+    },
+    "D4": {
+      "frame_count": 83,
+      "first_timestamp": 5.999991773035501,
+      "last_timestamp": 497.9993171619466
+    },
+    "D6": {
+      "frame_count": 39,
+      "first_timestamp": 5.999990998305564,
+      "last_timestamp": 233.99964893391697
+    },
+    "D2": {
+      "frame_count": 283,
+      "first_timestamp": 6.0,
+      "last_timestamp": 1728.0
+    },
+    "day0": {
+      "frame_count": 5,
+      "first_timestamp": 5.993838533178114,
+      "last_timestamp": 29.96919266589057
+    },
+    "D1": {
+      "frame_count": 169,
+      "first_timestamp": 5.955558419553402,
+      "last_timestamp": 672.9781014095344
+    },
+    "day": {
+      "frame_count": 5,
+      "first_timestamp": 6.0,
+      "last_timestamp": 30.0
+    },
+    "N8": {
+      "frame_count": 164,
+      "first_timestamp": 5.9726333333333335,
+      "last_timestamp": 718.718
+    },
+    "DJI_20250518070732_0017_D": {
+      "frame_count": 546,
+      "first_timestamp": 5.9726333333333335,
+      "last_timestamp": 2204.0685333333336
+    }
+  }
+}

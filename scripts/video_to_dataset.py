@@ -36,7 +36,7 @@ from auto_labeling_parallel import (
 # 配置
 # ============================================================================
 
-VIDEO_DIR = Path("traffic_sign_data/videos/raw_videos")
+VIDEO_DIR = Path("raw_data/videos/raw_videos")
 TEMP_FRAMES_DIR = Path("temp_frames")
 OUTPUT_BASE = Path("output")
 

@@ -69,7 +69,7 @@ def generate_report(prefix: str):
             others.append((label, count))
     
     # 查找源视频
-    video_path = f"traffic_sign_data/videos/raw_videos/{prefix}.mp4"
+    video_path = f"raw_data/videos/raw_videos/{prefix}.mp4"
     if not Path(video_path).exists():
         video_path = "(未找到)"
     

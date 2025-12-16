@@ -17,7 +17,7 @@ class VideoProcessor:
     """视频处理器"""
     
     # 默认视频目录
-    DEFAULT_VIDEO_DIR = Path("traffic_sign_data/videos/raw_videos")
+    DEFAULT_VIDEO_DIR = Path("raw_data/videos/raw_videos")
     
     def __init__(self, video_dir: Optional[str] = None):
         self.video_dir = Path(video_dir) if video_dir else self.DEFAULT_VIDEO_DIR

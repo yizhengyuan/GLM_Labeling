@@ -18,8 +18,8 @@ import subprocess
 
 # 配置
 DATASET_OUTPUT = Path("dataset_output")
-CLIPS_DIR = Path("traffic_sign_data/videos/clips")
-RAW_VIDEOS_DIR = Path("traffic_sign_data/videos/raw_videos")
+CLIPS_DIR = Path("raw_data/videos/clips")
+RAW_VIDEOS_DIR = Path("raw_data/videos/raw_videos")
 
 # 模型配置 (可根据实际情况调整)
 MODEL_CONFIG = {

@@ -25,7 +25,7 @@ from zai import ZaiClient
 # 配置
 # ============================================================================
 
-SIGNS_DIR = Path("traffic_sign_data/images/signs/highres/png2560px")
+SIGNS_DIR = Path("raw_data/images/signs/highres/png2560px")
 
 def load_sign_candidates():
     """从标志图片目录动态加载所有标志名称"""

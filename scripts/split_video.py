@@ -12,7 +12,7 @@ import shutil
 
 @click.command()
 @click.argument('input_path', type=click.Path(exists=True))
-@click.option('-o', '--output-dir', type=click.Path(), default=None, help='输出目录 (默认: traffic_sign_data/videos/clips/<VideoName>)')
+@click.option('-o', '--output-dir', type=click.Path(), default=None, help='输出目录 (默认: raw_data/videos/clips/<VideoName>)')
 @click.option('--segment-time', type=float, default=33.33, help='每个切片的时长（秒），默认 33.33 秒 (对应 3FPS 标注约 100 帧)')
 @click.option('--min-ratio', type=float, default=0.3, help='最后一个片段的最小时长比例，低于此值自动删除 (默认: 0.3 即 30%)')
 @click.option('--prefix', type=str, default=None, help='输出文件前缀 (默认: 原文件名)')
@@ -22,12 +22,12 @@ def split_video(input_path, output_dir, segment_time, min_ratio, prefix):
     
     按时间切分，保持原始帧率和画质，不重新编码。
     
-    示例: python scripts/split_video.py traffic_sign_data/videos/raw_videos/D1.mp4
+    示例: python scripts/split_video.py raw_data/videos/raw_videos/D1.mp4
     """
     input_path = Path(input_path)
     
     if output_dir is None:
-        output_dir = Path("traffic_sign_data/videos/clips") / input_path.stem
+        output_dir = Path("raw_data/videos/clips") / input_path.stem
     else:
         output_dir = Path(output_dir)
     
