@@ -48,21 +48,67 @@ TOKEN_ESTIMATE = {
 }
 
 
-def get_video_duration(video_name: str) -> float:
-    """获取视频时长（秒）"""
+def get_video_info(video_name: str) -> dict:
+    """获取视频详细信息（时长、分辨率、帧率、编码、码率、文件大小）"""
     video_path = RAW_VIDEOS_DIR / f"{video_name}.mp4"
+    info = {
+        "duration": 0.0,
+        "width": 0,
+        "height": 0,
+        "fps": 0.0,
+        "codec": "",
+        "bitrate": 0,
+        "filesize": 0,
+    }
+    
     if not video_path.exists():
-        return 0.0
+        return info
     
     try:
+        # 获取视频流信息
         result = subprocess.run(
-            ['ffprobe', '-v', 'error', '-show_entries', 'format=duration',
-             '-of', 'default=noprint_wrappers=1:nokey=1', str(video_path)],
+            ['ffprobe', '-v', 'error', '-select_streams', 'v:0',
+             '-show_entries', 'stream=width,height,r_frame_rate,codec_name,bit_rate',
+             '-show_entries', 'format=duration,size',
+             '-of', 'json', str(video_path)],
             capture_output=True, text=True, check=True
         )
-        return float(result.stdout.strip())
-    except:
-        return 0.0
+        import json as json_module
+        data = json_module.loads(result.stdout)
+        
+        # 解析流信息
+        if data.get("streams"):
+            stream = data["streams"][0]
+            info["width"] = stream.get("width", 0)
+            info["height"] = stream.get("height", 0)
+            info["codec"] = stream.get("codec_name", "")
+            
+            # 解析帧率 (可能是 "30/1" 或 "30000/1001" 格式)
+            fps_str = stream.get("r_frame_rate", "0/1")
+            if "/" in fps_str:
+                num, den = fps_str.split("/")
+                info["fps"] = float(num) / float(den) if float(den) > 0 else 0
+            
+            # 码率
+            bitrate = stream.get("bit_rate")
+            if bitrate:
+                info["bitrate"] = int(bitrate)
+        
+        # 解析格式信息
+        if data.get("format"):
+            fmt = data["format"]
+            info["duration"] = float(fmt.get("duration", 0))
+            info["filesize"] = int(fmt.get("size", 0))
+            
+    except Exception as e:
+        pass
+    
+    return info
+
+
+def get_video_duration(video_name: str) -> float:
+    """获取视频时长（秒）- 兼容旧接口"""
+    return get_video_info(video_name)["duration"]
 
 
 def collect_segment_stats(video_name: str) -> dict:
@@ -184,8 +230,10 @@ def generate_report(video_name: str, video_duration: float = None) -> str:
     if not stats or not stats["segments"]:
         return None
     
+    # 获取视频详细信息
+    video_info = get_video_info(video_name)
     if video_duration is None:
-        video_duration = get_video_duration(video_name)
+        video_duration = video_info["duration"]
     
     cost = estimate_cost(stats)
     
@@ -230,6 +278,22 @@ def generate_report(video_name: str, video_duration: float = None) -> str:
     report.append(f"视频文件:         {video_name}.mp4")
     if video_duration > 0:
         report.append(f"视频时长:         {video_duration:.1f} 秒 ({video_duration/60:.1f} 分钟)")
+    
+    # 视频规格
+    if video_info["width"] > 0:
+        report.append(f"分辨率:           {video_info['width']}x{video_info['height']}")
+    if video_info["fps"] > 0:
+        report.append(f"原始帧率:         {video_info['fps']:.2f} fps")
+    if video_info["codec"]:
+        report.append(f"视频编码:         {video_info['codec'].upper()}")
+    if video_info["bitrate"] > 0:
+        bitrate_mbps = video_info["bitrate"] / 1_000_000
+        report.append(f"视频码率:         {bitrate_mbps:.1f} Mbps")
+    if video_info["filesize"] > 0:
+        filesize_mb = video_info["filesize"] / (1024 * 1024)
+        report.append(f"文件大小:         {filesize_mb:.1f} MB")
+    
+    report.append("")
     report.append(f"切片策略:         每段约 33.3 秒 (~100 帧 @ 3FPS)")
     report.append(f"切片数量:         {len(stats['segments'])} 段")
     report.append("")

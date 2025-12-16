@@ -780,12 +780,8 @@ def create_dataset(video_name: str, video_path: str, frames_dir: Path, annotatio
         json.dump(stats_json, f, ensure_ascii=False, indent=2)
     print(f"   ✅ 生成 stats.json")
     
-    # 压缩
-    print(f"   📦 创建压缩包...")
-    zip_path = output_base / f"{video_name}_dataset.zip"
-    shutil.make_archive(str(dataset_dir), 'zip', str(output_base), f"{video_name}_dataset")
-    zip_size = zip_path.stat().st_size / (1024 * 1024)
-    print(f"   ✅ {zip_path} ({zip_size:.1f} MB)")
+    # 注: 不再为每个片段单独生成 zip，统一在最后整合时生成
+    # 如需单独压缩，可运行: zip -r {video_name}_dataset.zip {video_name}_dataset
     
     return dataset_dir
 
