@@ -9,6 +9,7 @@
 """
 
 import os
+import threading
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Optional
@@ -78,20 +79,25 @@ class Config:
         return path
 
 
-# 全局配置实例（单例模式）
+# 全局配置实例（单例模式，线程安全）
 _config_instance: Optional[Config] = None
+_config_lock = threading.Lock()
 
 
 def get_config() -> Config:
-    """获取全局配置实例"""
+    """获取全局配置实例（线程安全）"""
     global _config_instance
     if _config_instance is None:
-        _config_instance = Config()
+        with _config_lock:
+            # Double-check locking
+            if _config_instance is None:
+                _config_instance = Config()
     return _config_instance
 
 
 def init_config(**kwargs) -> Config:
     """初始化配置（可覆盖默认值）"""
     global _config_instance
-    _config_instance = Config(**kwargs)
+    with _config_lock:
+        _config_instance = Config(**kwargs)
     return _config_instance

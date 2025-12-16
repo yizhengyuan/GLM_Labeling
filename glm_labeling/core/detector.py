@@ -156,7 +156,17 @@ class ObjectDetector:
                 )
             )
 
-            result_text = response.choices[0].message.content.strip()
+            # 验证 API 响应结构
+            if not response.choices or not response.choices[0].message:
+                self.logger.warning(f"[{image_name}] Empty API response")
+                return []
+
+            content = response.choices[0].message.content
+            if not content:
+                self.logger.warning(f"[{image_name}] Empty content in API response")
+                return []
+
+            result_text = content.strip()
             detections = parse_llm_json(result_text)
 
             if not detections:

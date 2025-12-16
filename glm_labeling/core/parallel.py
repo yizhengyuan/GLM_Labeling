@@ -4,6 +4,7 @@
 提供批量图片的并行处理能力。
 """
 
+from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Callable
@@ -25,10 +26,10 @@ from .sign_classifier import SignClassifier
 class ParallelProcessor:
     """
     并行批量处理器
-    
+
     支持多线程并行处理图片，提供进度跟踪和错误处理。
     """
-    
+
     def __init__(
         self,
         api_key: Optional[str] = None,
@@ -37,7 +38,7 @@ class ParallelProcessor:
     ):
         """
         初始化处理器
-        
+
         Args:
             api_key: API Key
             workers: 并行线程数
@@ -45,19 +46,20 @@ class ParallelProcessor:
         """
         self.config = get_config()
         self.logger = get_logger()
-        
+
         self.api_key = api_key or self.config.api_key
         self.workers = workers
         self.use_rag = use_rag
 
-        # 统计数据（线程安全）
+        # 统计数据（线程安全，使用 defaultdict 避免 KeyError）
         self._stats_lock = threading.Lock()
-        self.stats = {
+        self.stats = defaultdict(int, {
             "pedestrian": 0,
             "vehicle": 0,
             "traffic_sign": 0,
-            "construction": 0
-        }
+            "construction": 0,
+            "unknown": 0
+        })
     
     def process_batch(
         self,
@@ -136,15 +138,18 @@ class ParallelProcessor:
                         self._save_result(detections, image_path, output_dir)
                         
                         progress.update(
-                            image_name, 
-                            success=True, 
+                            image_name,
+                            success=True,
                             message=f"{len(detections)} objects"
                         )
                         results["success"] += 1
-                    
-                    # 回调
+
+                    # 回调（包装错误处理，避免回调异常导致整个批次失败）
                     if on_complete:
-                        on_complete(image_path, detections, error)
+                        try:
+                            on_complete(image_path, detections, error)
+                        except Exception as cb_error:
+                            self.logger.error(f"[{image_name}] Callback error: {cb_error}")
                         
                 except Exception as e:
                     progress.update(image_name, success=False, message=str(e))

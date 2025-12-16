@@ -52,42 +52,50 @@ def get_image_size(image_path: str) -> Tuple[int, int]:
 
 
 def crop_region(
-    image_path: str, 
-    bbox: list, 
+    image_path: str,
+    bbox: list,
     padding: int = 10,
     save_path: Optional[str] = None
 ) -> Tuple[Image.Image, str]:
     """
     裁剪图片指定区域
-    
+
     Args:
         image_path: 原图路径
         bbox: 边界框 [x1, y1, x2, y2]
         padding: 边界扩展像素
         save_path: 保存路径（可选，None 则自动生成临时路径）
-        
+
     Returns:
         (裁剪后的 PIL Image, 保存路径)
+
+    Raises:
+        ValueError: bbox 尺寸无效
     """
-    img = Image.open(image_path)
     x1, y1, x2, y2 = bbox
-    
-    # 添加 padding 并确保不越界
-    x1 = max(0, x1 - padding)
-    y1 = max(0, y1 - padding)
-    x2 = min(img.width, x2 + padding)
-    y2 = min(img.height, y2 + padding)
-    
-    cropped = img.crop((x1, y1, x2, y2))
-    
-    # 生成保存路径
-    if save_path is None:
-        unique_id = uuid.uuid4()
-        save_path = f"/tmp/glm_labeling/crop_{unique_id}.jpg"
-        Path(save_path).parent.mkdir(parents=True, exist_ok=True)
-    
-    cropped.save(save_path, "JPEG")
-    
+
+    # 使用 context manager 防止内存泄漏
+    with Image.open(image_path) as img:
+        # 添加 padding 并确保不越界
+        x1 = max(0, x1 - padding)
+        y1 = max(0, y1 - padding)
+        x2 = min(img.width, x2 + padding)
+        y2 = min(img.height, y2 + padding)
+
+        # 验证裁剪区域有效性
+        if (x2 - x1) < 1 or (y2 - y1) < 1:
+            raise ValueError(f"Invalid crop dimensions: width={x2-x1}, height={y2-y1}")
+
+        cropped = img.crop((x1, y1, x2, y2))
+
+        # 生成保存路径
+        if save_path is None:
+            unique_id = uuid.uuid4()
+            save_path = f"/tmp/glm_labeling/crop_{unique_id}.jpg"
+            Path(save_path).parent.mkdir(parents=True, exist_ok=True)
+
+        cropped.save(save_path, "JPEG")
+
     return cropped, save_path
 
 
