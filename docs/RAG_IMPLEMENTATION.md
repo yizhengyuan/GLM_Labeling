@@ -186,8 +186,7 @@ GLM_Labeling/
 ├── auto_labeling_parallel.py   # 并行 + RAG 主脚本
 ├── two_stage_classifier.py     # 两阶段分类器
 ├── rag_sign_classifier.py      # RAG 向量库工具
-├── examples/signs/             # 188 种标准香港交通标志
-│   └── highres/png2560px/
+├── signs/                      # 188 种标准香港交通标志 (PNG 2560px)
 └── output/
     └── d2_annotations_rag/     # RAG 标注结果
 ```
