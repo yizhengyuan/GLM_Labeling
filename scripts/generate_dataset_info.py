@@ -494,6 +494,39 @@ def generate_report(video_name: str, video_duration: float = None) -> str:
     return "\n".join(report)
 
 
+def zip_dataset(video_name: str):
+    """打包数据集为 zip 文件"""
+    import shutil
+    
+    dataset_dir = DATASET_OUTPUT / f"{video_name}_dataset"
+    zip_path = DATASET_OUTPUT / f"{video_name}_dataset.zip"
+    
+    if not dataset_dir.exists():
+        print(f"  ⚠️ 数据集目录不存在: {dataset_dir}")
+        return False
+    
+    # 删除旧的 zip
+    if zip_path.exists():
+        zip_path.unlink()
+    
+    print(f"  📦 打包中...")
+    shutil.make_archive(
+        str(DATASET_OUTPUT / f"{video_name}_dataset"),
+        'zip',
+        str(DATASET_OUTPUT),
+        f"{video_name}_dataset"
+    )
+    
+    zip_size = zip_path.stat().st_size / (1024 * 1024 * 1024)  # GB
+    if zip_size < 1:
+        zip_size_str = f"{zip_path.stat().st_size / (1024 * 1024):.1f} MB"
+    else:
+        zip_size_str = f"{zip_size:.2f} GB"
+    
+    print(f"  ✅ {zip_path.name} ({zip_size_str})")
+    return True
+
+
 def consolidate_dataset(video_name: str):
     """整合分散的片段到统一的数据集目录"""
     target_dir = DATASET_OUTPUT / f"{video_name}_dataset"
@@ -525,7 +558,8 @@ def consolidate_dataset(video_name: str):
 @click.option('--video-duration', type=float, default=None, help='视频时长（秒），不指定则自动获取')
 @click.option('--all', 'process_all', is_flag=True, help='处理所有已完成的视频')
 @click.option('--consolidate', is_flag=True, help='先整合分散的片段')
-def main(video_name, video_duration, process_all, consolidate):
+@click.option('--zip', 'create_zip', is_flag=True, help='生成 zip 压缩包')
+def main(video_name, video_duration, process_all, consolidate, create_zip):
     """生成详细的数据集信息报告"""
     
     if process_all:
@@ -556,6 +590,10 @@ def main(video_name, video_duration, process_all, consolidate):
                 output_path.parent.mkdir(exist_ok=True)
                 output_path.write_text(report)
                 print(f"✅ 生成: {output_path}")
+                
+                # 生成 zip
+                if create_zip:
+                    zip_dataset(v)
             else:
                 print(f"⚠️ 无法生成报告 (可能没有数据)")
     
@@ -571,6 +609,11 @@ def main(video_name, video_duration, process_all, consolidate):
             output_path.parent.mkdir(exist_ok=True)
             output_path.write_text(report)
             print(f"✅ 生成: {output_path}")
+            
+            # 生成 zip
+            if create_zip:
+                zip_dataset(video_name)
+            
             print(f"\n{report}")
         else:
             print(f"❌ 无法生成报告")
