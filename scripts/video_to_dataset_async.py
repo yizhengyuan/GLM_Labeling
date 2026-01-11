@@ -5,7 +5,14 @@
 使用 asyncio + httpx 实现真正的并发 API 请求，速度更快。
 
 用法:
+    # 基本用法 (默认 PNG 无损抽帧)
     python3 scripts/video_to_dataset_async.py --video D4.1 --workers 15
+
+    # 使用 JPEG 抽帧（省空间）
+    python3 scripts/video_to_dataset_async.py --video D4.1 --jpeg-frames
+
+    # 使用 Gemini 模型
+    python3 scripts/video_to_dataset_async.py --video D4.1 --model gemini-2.5-flash
 """
 
 import os
@@ -27,15 +34,79 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from glm_labeling.utils.labels import get_category, normalize_vehicle_label
 from glm_labeling.utils.json_utils import parse_llm_json
+from glm_labeling.core.sign_classifier_v2 import SignClassifierV2
+
+# DINOv2 分类器（推荐，最强特征提取）
+try:
+    from scripts.dinov2_classifier import DINOv2SignClassifier
+    DINOV2_AVAILABLE = True
+except ImportError:
+    DINOV2_AVAILABLE = False
+
+# CLIP 分类器（可选）
+try:
+    from scripts.clip_rag_classifier import CLIPSignClassifier
+    CLIP_AVAILABLE = True
+except ImportError:
+    CLIP_AVAILABLE = False
 
 
 # ============================================================================
 # 配置
 # ============================================================================
 
-API_BASE_URL = "https://api.z.ai/api/paas/v4"
-MODEL_NAME = "glm-4.6v"
-COORD_BASE = 1000  # GLM 输出坐标基数
+# 多模型配置
+MODEL_CONFIGS = {
+    # GLM 系列
+    "glm": {
+        "name": "glm-4.6v",
+        "api_base": "https://api.z.ai/api/paas/v4",
+        "api_key_env": "ZAI_API_KEY",
+        "coord_base": 1000,
+        "type": "glm",
+    },
+    # Gemini 系列 - 推荐
+    "gemini-2.5-flash": {
+        "name": "gemini-2.5-flash",
+        "api_base": None,
+        "api_key_env": "GOOGLE_API_KEY",
+        "coord_base": 1000,
+        "type": "gemini",
+    },
+    "gemini-2.0-flash": {
+        "name": "gemini-2.0-flash",
+        "api_base": None,
+        "api_key_env": "GOOGLE_API_KEY",
+        "coord_base": 1000,
+        "type": "gemini",
+    },
+    "gemini-2.5-pro": {
+        "name": "gemini-2.5-pro",
+        "api_base": None,
+        "api_key_env": "GOOGLE_API_KEY",
+        "coord_base": 1000,
+        "type": "gemini",
+    },
+    "gemini-3-pro": {
+        "name": "gemini-3-pro-preview",
+        "api_base": None,
+        "api_key_env": "GOOGLE_API_KEY",
+        "coord_base": 1000,
+        "type": "gemini",
+    },
+    # 兼容旧参数
+    "gemini": {
+        "name": "gemini-2.5-flash",  # 默认使用 2.5-flash
+        "api_base": None,
+        "api_key_env": "GOOGLE_API_KEY",
+        "coord_base": 1000,
+        "type": "gemini",
+    },
+}
+
+# 默认模型
+DEFAULT_MODEL = "glm"
+COORD_BASE = 1000
 
 VIDEO_DIR = Path("raw_data/videos/clips")  # 默认查找切分后的片段
 DATASET_OUTPUT = Path("dataset_output")  # 直接输出到最终目录
@@ -53,10 +124,10 @@ def load_sign_candidates():
 ALL_SIGN_CANDIDATES = load_sign_candidates()
 
 COLORS = {
-    'pedestrian': (255, 0, 0),
-    'vehicle': (0, 255, 0),
-    'traffic_sign': (0, 100, 255),
-    'construction': (255, 165, 0),
+    'traffic_sign': (0, 100, 255),    # ID 0: 蓝色
+    'pedestrian': (255, 0, 0),        # ID 1: 红色
+    'vehicle': (0, 255, 0),           # ID 2: 绿色
+    'small_obstacle': (255, 165, 0),  # ID 3: 橙色
 }
 
 DETECTION_PROMPT = """请检测图片中的以下4类物体，返回JSON格式。
@@ -85,7 +156,7 @@ DETECTION_PROMPT = """请检测图片中的以下4类物体，返回JSON格式�
 ### 3. 交通标志类 (traffic_sign)
 traffic_sign
 
-### 4. 施工标志类 (construction)
+### 4. 小型障碍物类 (small_obstacle)
 traffic_cone, construction_barrier
 
 ## 返回格式示例：
@@ -165,24 +236,86 @@ def to_xanylabeling_format(detections: List[Dict], image_path: str) -> Dict:
 # ============================================================================
 
 class AsyncDetector:
-    """异步目标检测器"""
+    """异步目标检测器 - 支持多模型 (GLM / Gemini) 和多种 RAG 分类器"""
     
-    def __init__(self, api_key: str, max_concurrent: int = 12, timeout: float = 45.0):
+    def __init__(self, api_key: str, max_concurrent: int = 12, timeout: float = 45.0, model_type: str = "glm", 
+                 use_clip_rag: bool = False, sign_classifier_type: str = None):
+        """
+        Args:
+            api_key: API 密钥
+            max_concurrent: 最大并发数
+            timeout: 超时时间
+            model_type: VLM 检测模型类型
+            use_clip_rag: (旧参数，兼容) 是否使用 CLIP 分类
+            sign_classifier_type: 交通标志分类器类型 ("dinov2", "clip", "vlm", None)
+                - None/vlm: 使用 VLM 文字选项（默认）
+                - dinov2: 使用 DINOv2 向量检索（推荐，最强）
+                - clip: 使用 CLIP 向量检索
+        """
         self.api_key = api_key
         self.timeout = timeout
+        self.model_type = model_type
+        self.model_config = MODEL_CONFIGS.get(model_type, MODEL_CONFIGS["glm"])
         self.semaphore = asyncio.Semaphore(max_concurrent)
         self.client: Optional[httpx.AsyncClient] = None
+        self.gemini_client = None
+        
+        # 确定分类器类型（兼容旧参数）
+        if sign_classifier_type:
+            self.sign_classifier_type = sign_classifier_type
+        elif use_clip_rag:
+            self.sign_classifier_type = "clip"
+        else:
+            self.sign_classifier_type = "vlm"
+        
+        # 交通标志分类器初始化
+        self.vector_classifier = None
+        self.sign_classifier = None
+        
+        if self.sign_classifier_type == "dinov2":
+            if DINOV2_AVAILABLE:
+                print("   🦖 使用 DINOv2 向量检索进行交通标志分类（推荐）")
+                self.vector_classifier = DINOv2SignClassifier(use_69_signs=False)
+            else:
+                print("   ⚠️ DINOv2 不可用，回退到 VLM 方式")
+                self.sign_classifier_type = "vlm"
+        elif self.sign_classifier_type == "clip":
+            if CLIP_AVAILABLE:
+                print("   📎 使用 CLIP 向量检索进行交通标志分类")
+                self.vector_classifier = CLIPSignClassifier(use_69_signs=False)
+            else:
+                print("   ⚠️ CLIP 不可用，回退到 VLM 方式")
+                self.sign_classifier_type = "vlm"
+        
+        if self.sign_classifier_type == "vlm":
+            # 使用原版 VLM 分类器（69个核心标志 + other）
+            self.sign_classifier = SignClassifierV2(
+                api_key=api_key, 
+                timeout=timeout,
+                model_choice=model_type
+            )
     
     async def __aenter__(self):
-        self.client = httpx.AsyncClient(
-            base_url=API_BASE_URL,
-            timeout=httpx.Timeout(self.timeout, connect=10.0),
-            headers={
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json"
-            },
-            limits=httpx.Limits(max_connections=30, max_keepalive_connections=15)
-        )
+        model_type = self.model_config.get("type", self.model_type)
+        if model_type == "gemini":
+            # 使用 google-genai SDK
+            try:
+                from google import genai
+                self.gemini_client = genai.Client()
+                print(f"   🔌 Gemini 客户端已初始化 ({self.model_config['name']})")
+            except ImportError:
+                raise ImportError("请安装 google-genai: pip install google-genai")
+        else:
+            # 使用 httpx 客户端 (GLM)
+            self.client = httpx.AsyncClient(
+                base_url=self.model_config["api_base"],
+                timeout=httpx.Timeout(self.timeout, connect=10.0),
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json"
+                },
+                limits=httpx.Limits(max_connections=30, max_keepalive_connections=15)
+            )
         return self
     
     async def __aexit__(self, *args):
@@ -200,42 +333,25 @@ class AsyncDetector:
             return await self._detect_with_retry(image_path, retry)
     
     async def _detect_with_retry(self, image_path: str, max_retry: int) -> tuple:
-        """带重试的检测"""
+        """带重试的检测 - 支持多模型"""
         image_name = Path(image_path).name
         last_error = None
+        width, height = get_image_size(image_path)
         
         for attempt in range(max_retry):
             try:
-                base64_url = image_to_base64_url(image_path)
-                width, height = get_image_size(image_path)
+                model_type = self.model_config.get("type", self.model_type)
+                if model_type == "gemini":
+                    # ============ Gemini API ============
+                    content = await self._detect_gemini(image_path)
+                else:
+                    # ============ GLM API ============
+                    content = await self._detect_glm(image_path)
                 
-                payload = {
-                    "model": MODEL_NAME,
-                    "messages": [{
-                        "role": "user",
-                        "content": [
-                            {"type": "image_url", "image_url": {"url": base64_url}},
-                            {"type": "text", "text": DETECTION_PROMPT}
-                        ]
-                    }]
-                }
-                
-                response = await self.client.post("/chat/completions", json=payload)
-                
-                # 处理 429 限流
-                if response.status_code == 429:
-                    retry_after = float(response.headers.get("Retry-After", 3))
-                    await asyncio.sleep(retry_after * (attempt + 1))
-                    continue
-                
-                response.raise_for_status()
-                data = response.json()
-                
-                content = data["choices"][0]["message"]["content"]
+                # 解析 JSON
                 detections = parse_llm_json(content)
                 
                 if detections is None:
-                    # JSON 解析失败，重试
                     last_error = "JSON parse error"
                     await asyncio.sleep(1)
                     continue
@@ -264,186 +380,175 @@ class AsyncDetector:
                 
                 return processed, None
                 
-            except httpx.TimeoutException:
-                last_error = "Timeout"
-                await asyncio.sleep(2 * (attempt + 1))
-            except httpx.HTTPStatusError as e:
-                last_error = f"HTTP {e.response.status_code}"
-                if e.response.status_code == 429:
+            except Exception as e:
+                last_error = str(e)[:50]
+                if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
                     await asyncio.sleep(3 * (attempt + 1))
                 else:
-                    await asyncio.sleep(2)
+                    await asyncio.sleep(2 * (attempt + 1))
         
         return [], last_error
     
+    async def _detect_glm(self, image_path: str) -> str:
+        """GLM API 检测"""
+        base64_url = image_to_base64_url(image_path)
+        
+        payload = {
+            "model": self.model_config["name"],
+            "messages": [{
+                "role": "user",
+                "content": [
+                    {"type": "image_url", "image_url": {"url": base64_url}},
+                    {"type": "text", "text": DETECTION_PROMPT}
+                ]
+            }]
+        }
+        
+        response = await self.client.post("/chat/completions", json=payload)
+        
+        if response.status_code == 429:
+            raise Exception("429 Rate Limited")
+        
+        response.raise_for_status()
+        data = response.json()
+        return data["choices"][0]["message"]["content"]
+    
+    async def _detect_gemini(self, image_path: str) -> str:
+        """Gemini API 检测"""
+        from google.genai import types
+        
+        # 读取图片
+        with open(image_path, "rb") as f:
+            image_data = f.read()
+        
+        ext = Path(image_path).suffix.lower()
+        mime_types = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"}
+        mime_type = mime_types.get(ext, "image/jpeg")
+        
+        # 调用 Gemini (同步调用，在线程池中执行)
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            None,
+            lambda: self.gemini_client.models.generate_content(
+                model=self.model_config["name"],
+                contents=[
+                    types.Part.from_bytes(data=image_data, mime_type=mime_type),
+                    DETECTION_PROMPT
+                ]
+            )
+        )
+        
+        return response.text
+    
     async def classify_sign_rag(self, image_path: str, bbox: list) -> str:
         """
-        RAG 交通标志精排（异步版）- 支持 188 种细粒度分类
+        RAG 交通标志精排（异步版）- 支持多种分类器
+        
+        DINOv2 模式（推荐）：
+        - 使用 DINOv2 强大的视觉特征 + Chroma 向量数据库
+        - 细粒度特征提取，对复杂场景更鲁棒
+        
+        CLIP 模式：
+        - 使用 CLIP 图像向量 + Chroma 向量数据库
+        - 通过余弦相似度检索最相似的标志
+        
+        VLM 模式（原版）：
+        - 使用 VLM + 文字选项列表
+        - 依赖模型预训练知识
         
         Args:
             image_path: 原图路径
             bbox: 交通标志的边界框 [x1, y1, x2, y2]
         
         Returns:
-            细粒度标签，如 Speed_limit_70_km_h, No_stopping_at_any_time 等
+            细粒度标签，或 "other"（导航/方向牌等）
         """
-        if not ALL_SIGN_CANDIDATES:
-            return "traffic_sign"
-        
-        temp_path = None
-        
         try:
-            img = Image.open(image_path)
-            padding = 10
-            x1 = max(0, bbox[0] - padding)
-            y1 = max(0, bbox[1] - padding)
-            x2 = min(img.width, bbox[2] + padding)
-            y2 = min(img.height, bbox[3] + padding)
-            
-            sign_crop = img.crop((x1, y1, x2, y2))
-            unique_id = uuid.uuid4()
-            temp_path = f"/tmp/sign_crop_{unique_id}.jpg"
-            sign_crop.save(temp_path, "JPEG")
-            
-            with open(temp_path, "rb") as f:
-                img_data = base64.b64encode(f.read()).decode()
-            
-            base64_url = f"data:image/jpeg;base64,{img_data}"
-            
-            # ================================================================
-            # 阶段1：从 188 种候选中选择最匹配的标志
-            # ================================================================
-            candidate_list = "\n".join([f"{i+1}. {c}" for i, c in enumerate(ALL_SIGN_CANDIDATES)])
-            
-            select_prompt = f"""请仔细观察这个交通标志，从以下选项中选择最匹配的：
-
-{candidate_list}
-
-规则：
-1. 观察标志的颜色、形状、文字、数字
-2. 如果是限速标志，选择 "Speed_limit_(in_km_h)"
-3. 如果都不匹配，返回 0
-
-请只返回选项编号（如 1、2、3），不要其他解释。"""
-            
-            payload = {
-                "model": MODEL_NAME,
-                "messages": [{
-                    "role": "user",
-                    "content": [
-                        {"type": "image_url", "image_url": {"url": base64_url}},
-                        {"type": "text", "text": select_prompt}
-                    ]
-                }],
-                "temperature": 0.1
-            }
-            
-            response = await self.client.post("/chat/completions", json=payload)
-            response.raise_for_status()
-            choice = response.json()["choices"][0]["message"]["content"].strip()
-            
-            # 解析选择
-            base_label = "traffic_sign"
-            numbers = re.findall(r'\d+', choice)
-            if numbers:
-                idx = int(numbers[0]) - 1
-                if 0 <= idx < len(ALL_SIGN_CANDIDATES):
-                    base_label = ALL_SIGN_CANDIDATES[idx]
-            
-            # ================================================================
-            # 阶段2：对通用标志进一步识别具体数字
-            # ================================================================
-            generic_signs = {
-                "Speed_limit_(in_km_h)": {
-                    "question": "请识别这个限速标志上显示的具体数字（如 20, 30, 50, 70, 100）。只返回数字。",
-                    "format": "Speed_limit_{}_km_h"
-                },
-                "Variable_speed_limit_(in_km_h)": {
-                    "question": "请识别这个可变限速标志上显示的数字。只返回数字。",
-                    "format": "Variable_speed_limit_{}_km_h"
-                },
-                "Distance_as_shown_to_hazard": {
-                    "question": "请识别标志上显示的距离数字（单位：米）。只返回数字。",
-                    "format": "Distance_{}_m_to_hazard"
-                },
-                "Maximum_height_as_shown_(in_metres)": {
-                    "question": "请识别标志上显示的最大高度限制（单位：米）。只返回数字。",
-                    "format": "Maximum_height_{}_m"
-                },
-                "Maximum_payload_as_shown_(in_tonnes)": {
-                    "question": "请识别标志上显示的最大载重限制（单位：吨）。只返回数字。",
-                    "format": "Maximum_payload_{}_tonnes"
-                }
-            }
-            
-            if base_label in generic_signs:
-                detail_info = generic_signs[base_label]
-                
-                payload["messages"][0]["content"][1]["text"] = detail_info["question"]
-                
-                response2 = await self.client.post("/chat/completions", json=payload)
-                response2.raise_for_status()
-                detail_text = response2.json()["choices"][0]["message"]["content"].strip()
-                
-                detail_numbers = re.findall(r'\d+', detail_text)
-                if detail_numbers:
-                    specific_value = detail_numbers[0]
-                    return detail_info["format"].format(specific_value)
-            
-            return base_label
-            
+            if self.vector_classifier:
+                # 向量检索模式（DINOv2 或 CLIP）
+                loop = asyncio.get_event_loop()
+                label, score = await loop.run_in_executor(
+                    None,
+                    lambda: self.vector_classifier.classify(image_path, bbox)
+                )
+                return label
+            else:
+                # VLM 文字选项模式（原版）
+                label, description, raw = await self.sign_classifier.classify(image_path, bbox)
+                return label
         except Exception as e:
             return "traffic_sign"
-        
-        finally:
-            if temp_path and os.path.exists(temp_path):
-                os.remove(temp_path)
 
 
 # ============================================================================
 # Step 1: 抽帧
 # ============================================================================
 
-def extract_frames(video_path: str, output_name: str, dataset_dir: Path, fps: int = 3) -> tuple:
+def extract_frames(video_path: str, output_name: str, dataset_dir: Path, fps: int = 3, lossless: bool = False, keyframes_only: bool = True) -> tuple:
     """从视频抽帧，直接输出到 dataset 目录
-    
+
     Args:
         video_path: 视频文件路径
         output_name: 输出名称（用于命名帧）
         dataset_dir: 目标 dataset 目录
         fps: 抽帧率
+        lossless: 是否无损输出 (PNG 格式)
+        keyframes_only: 是否只提取 I-frame 关键帧（默认 True，画质最高）
     """
     video_path = Path(video_path)
-    
+
     if not video_path.exists():
         print(f"❌ 视频不存在: {video_path}")
         return None, 0
-    
+
     frames_dir = dataset_dir / "frames"
     frames_dir.mkdir(parents=True, exist_ok=True)
-    
-    # 检查是否已有帧（断点续传）
-    existing_frames = list(frames_dir.glob("*.jpg"))
+
+    # 检查是否已有帧（断点续传，支持 jpg 和 png）
+    existing_frames = list(frames_dir.glob("*.jpg")) + list(frames_dir.glob("*.png"))
     if existing_frames:
         print(f"\n📹 Step 1: 抽帧 (已存在 {len(existing_frames)} 帧，跳过)")
         return frames_dir, len(existing_frames)
-    
-    print(f"\n📹 Step 1: 抽帧 ({fps} FPS)")
+
+    format_desc = "PNG 无损" if lossless else "JPEG q=2"
+    keyframe_desc = "仅关键帧(I-frame)" if keyframes_only else "所有帧"
+    print(f"\n📹 Step 1: 抽帧 ({fps} FPS, {format_desc}, {keyframe_desc})")
     print(f"   视频: {video_path}")
     print(f"   目标: {frames_dir}")
-    
-    output_pattern = str(frames_dir / f"{output_name}_%06d.jpg")
-    cmd = [
-        "ffmpeg", "-i", str(video_path),
-        "-vf", f"fps={fps}",
-        "-q:v", "2",
-        output_pattern,
-        "-y"
-    ]
-    
+
+    # 构建视频滤镜
+    if keyframes_only:
+        # 只提取 I-frame 关键帧，再用 fps 过滤
+        vf_filter = f"select='eq(pict_type,I)',fps={fps}"
+    else:
+        # 提取所有帧，按 fps 采样
+        vf_filter = f"fps={fps}"
+
+    if lossless:
+        # PNG 无损输出
+        output_pattern = str(frames_dir / f"{output_name}_%06d.png")
+        cmd = [
+            "ffmpeg", "-i", str(video_path),
+            "-vf", vf_filter,
+            "-vsync", "vfr",
+            output_pattern,
+            "-y"
+        ]
+    else:
+        # JPEG 高质量输出 (q=2)
+        output_pattern = str(frames_dir / f"{output_name}_%06d.jpg")
+        cmd = [
+            "ffmpeg", "-i", str(video_path),
+            "-vf", vf_filter,
+            "-vsync", "vfr",
+            "-q:v", "2",
+            output_pattern,
+            "-y"
+        ]
+
     try:
         subprocess.run(cmd, capture_output=True, text=True, timeout=300)
-        frame_count = len(list(frames_dir.glob("*.jpg")))
+        frame_count = len(list(frames_dir.glob("*.jpg")) + list(frames_dir.glob("*.png")))
         print(f"   ✅ 抽取 {frame_count} 帧")
         return frames_dir, frame_count
     except Exception as e:
@@ -461,14 +566,28 @@ async def run_labeling_async(
     video_name: str, 
     workers: int,
     api_key: str,
-    use_rag: bool = True
+    use_rag: bool = True,
+    model_type: str = "glm",
+    use_clip_rag: bool = False,
+    sign_classifier_type: str = None
 ) -> Path:
-    """异步运行标注，直接输出到 dataset 目录"""
-    rag_status = "✅ 启用" if use_rag else "❌ 禁用"
-    print(f"\n🏷️ Step 2: 异步标注")
-    print(f"   并发数: {workers} | 模式: asyncio + httpx | RAG: {rag_status}")
+    """异步运行标注，直接输出到 dataset 目录 - 支持多模型和多种分类器"""
+    # 确定分类器显示名称
+    if sign_classifier_type == "dinov2":
+        rag_status = "🦖 DINOv2"
+    elif sign_classifier_type == "clip" or use_clip_rag:
+        rag_status = "📎 CLIP"
+    elif use_rag:
+        rag_status = "✅ VLM"
+    else:
+        rag_status = "❌ 禁用"
     
-    image_files = sorted(frames_dir.glob("*.jpg"))
+    model_name = MODEL_CONFIGS.get(model_type, MODEL_CONFIGS["glm"])["name"]
+    print(f"\n🏷️ Step 2: 异步标注")
+    print(f"   并发数: {workers} | 模型: {model_name} | RAG: {rag_status}")
+    
+    # 支持 jpg 和 png 两种格式
+    image_files = sorted(list(frames_dir.glob("*.jpg")) + list(frames_dir.glob("*.png")))
     if not image_files:
         print("   ❌ 没有找到帧")
         return None
@@ -494,11 +613,12 @@ async def run_labeling_async(
     print(f"   📝 待处理: {len(todo_files)} 帧")
     
     start_time = time.time()
-    stats = {"pedestrian": 0, "vehicle": 0, "traffic_sign": 0, "construction": 0}
+    stats = {"traffic_sign": 0, "pedestrian": 0, "vehicle": 0, "small_obstacle": 0}
     success = 0
     errors = 0
     
-    async with AsyncDetector(api_key, max_concurrent=workers) as detector:
+    async with AsyncDetector(api_key, max_concurrent=workers, model_type=model_type, 
+                             use_clip_rag=use_clip_rag, sign_classifier_type=sign_classifier_type) as detector:
         # 创建任务并记录对应的文件
         tasks = {
             asyncio.create_task(
@@ -588,10 +708,15 @@ def generate_visualizations(frames_dir: Path, annotations_dir: Path, dataset_dir
     
     count = 0
     for json_path in sorted(annotations_dir.glob("*.json")):
-        frame_name = json_path.stem + ".jpg"
-        frame_path = frames_dir / frame_name
-        
-        if not frame_path.exists():
+        # 支持 jpg 和 png 两种格式
+        frame_path = None
+        for ext in [".jpg", ".png"]:
+            candidate = frames_dir / (json_path.stem + ext)
+            if candidate.exists():
+                frame_path = candidate
+                break
+
+        if not frame_path:
             continue
         
         img = Image.open(frame_path)
@@ -727,12 +852,12 @@ def finalize_dataset(video_name: str, video_path: str, dataset_dir: Path, fps: i
         shutil.copy(video_src, video_dest)
         print(f"   ✅ 复制视频")
     
-    # 统计已有文件
+    # 统计已有文件（支持 jpg 和 png）
     frames_dir = dataset_dir / "frames"
     annotations_dir = dataset_dir / "annotations"
     vis_dir = dataset_dir / "visualized"
-    
-    frame_count = len(list(frames_dir.glob("*.jpg"))) if frames_dir.exists() else 0
+
+    frame_count = len(list(frames_dir.glob("*.jpg")) + list(frames_dir.glob("*.png"))) if frames_dir.exists() else 0
     ann_count = len(list(annotations_dir.glob("*.json"))) if annotations_dir.exists() else 0
     vis_count = len(list(vis_dir.glob("*.jpg"))) if vis_dir.exists() else 0
     
@@ -744,10 +869,10 @@ def finalize_dataset(video_name: str, video_path: str, dataset_dir: Path, fps: i
     stats["processing_time"] = elapsed_time  # 记录处理时间
     summary_md = create_summary_markdown(stats, video_name, fps, elapsed_time)
     
-    summary_path = dataset_dir / "SUMMARY.md"
+    summary_path = dataset_dir / f"{video_name}_dataset_info.txt"
     with open(summary_path, "w", encoding="utf-8") as f:
         f.write(summary_md)
-    print(f"   ✅ 生成 SUMMARY.md")
+    print(f"   ✅ 生成 {video_name}_dataset_info.txt")
     
     # 保存 JSON 格式的统计数据
     stats_json = {
@@ -773,17 +898,29 @@ def finalize_dataset(video_name: str, video_path: str, dataset_dir: Path, fps: i
 # ============================================================================
 
 async def main_async():
-    parser = argparse.ArgumentParser(description="异步视频到数据集流水线（优化版：直接输出到最终目录）")
+    parser = argparse.ArgumentParser(description="异步视频到数据集流水线（支持多模型：GLM / Gemini）")
     parser.add_argument("--video", type=str, required=True, help="视频文件路径 (如 raw_data/videos/clips/D1/D1_000.mp4)")
     parser.add_argument("--name", type=str, default=None, help="输出名称 (默认使用视频文件名)")
-    parser.add_argument("--fps", type=int, default=3, help="抽帧率 (默认 3)")
+    parser.add_argument("--output", type=str, default=None, help="输出目录 (默认 dataset_output)")
+    parser.add_argument("--fps", type=int, default=1, help="抽帧率 (默认 1)")
+    parser.add_argument("--jpeg-frames", action="store_true", help="使用 JPEG q=2 抽帧（省空间），默认为 PNG 无损")
+    parser.add_argument("--all-frames", action="store_true", help="提取所有帧（默认只提取 I-frame 关键帧，画质最高）")
     parser.add_argument("--workers", type=int, default=15, help="并发数 (默认 15)")
     parser.add_argument("--skip-visualize", action="store_true", help="跳过可视化")
     parser.add_argument("--rag", action="store_true", default=True, help="启用 RAG 交通标志细粒度分类 (默认启用)")
     parser.add_argument("--no-rag", dest="rag", action="store_false", help="禁用 RAG 交通标志细粒度分类")
+    parser.add_argument("--clip-rag", action="store_true", help="(旧参数) 使用 CLIP 向量检索")
+    parser.add_argument("--sign-classifier", type=str, default=None,
+                        choices=["dinov2", "clip", "vlm"],
+                        help="交通标志分类器: dinov2(推荐,最强), clip, vlm(默认)")
+    parser.add_argument("--model", type=str, default="glm", 
+                        choices=["glm", "gemini", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-pro", "gemini-3-pro"], 
+                        help="选择模型: glm, gemini-2.5-flash(推荐), gemini-2.0-flash, gemini-2.5-pro, gemini-3-pro (默认 glm)")
     args = parser.parse_args()
     
     video_path = Path(args.video)
+    model_type = args.model
+    model_config = MODEL_CONFIGS.get(model_type, MODEL_CONFIGS["glm"])
     
     # 自动确定输出名称
     if args.name:
@@ -791,10 +928,13 @@ async def main_async():
     else:
         output_name = video_path.stem  # 如 D1_000
     
-    api_key = os.getenv("ZAI_API_KEY")
+    # 根据模型获取对应的 API Key
+    api_key_env = model_config["api_key_env"]
+    api_key = os.getenv(api_key_env)
     
     if not api_key:
-        print("❌ 请设置 ZAI_API_KEY 环境变量")
+        print(f"❌ 请设置 {api_key_env} 环境变量")
+        print(f"   export {api_key_env}='your_api_key'")
         return
     
     if not video_path.exists():
@@ -802,25 +942,44 @@ async def main_async():
         return
     
     # 创建 dataset 目录（所有文件直接输出到这里）
-    dataset_dir = DATASET_OUTPUT / f"{output_name}_dataset"
+    output_base = Path(args.output) if args.output else DATASET_OUTPUT
+    dataset_dir = output_base / f"{output_name}_dataset"
     dataset_dir.mkdir(parents=True, exist_ok=True)
     
+    model_display = f"🔷 {model_config['name']}" if model_type == "glm" else f"🔶 {model_config['name']}"
+    rag_display = "🎯 CLIP" if args.clip_rag else ("✅ VLM" if args.rag else "❌ 禁用")
+    frame_format = "JPEG q=2" if args.jpeg_frames else "PNG 无损"
+
     print("=" * 70)
     print(f"🚀 异步视频标注流水线 - {output_name}")
     print(f"   视频: {video_path}")
     print(f"   输出: {dataset_dir}")
-    print(f"   FPS: {args.fps} | 并发: {args.workers} | 模式: asyncio (直接输出)")
+    print(f"   模型: {model_display} | 标志分类: {rag_display}")
+    print(f"   FPS: {args.fps} | 帧格式: {frame_format} | 并发: {args.workers}")
     print("=" * 70)
     
     start_time = time.time()
     
     # Step 1: 抽帧（直接到 dataset/frames）
-    frames_dir, _ = extract_frames(str(video_path), output_name, dataset_dir, args.fps)
+    # 默认 PNG 无损，--jpeg-frames 时使用 JPEG
+    # 默认只提取 I-frame 关键帧，--all-frames 时提取所有帧
+    lossless = not args.jpeg_frames
+    keyframes_only = not args.all_frames
+    frames_dir, _ = extract_frames(str(video_path), output_name, dataset_dir, args.fps, lossless=lossless, keyframes_only=keyframes_only)
     if not frames_dir:
         return
     
     # Step 2: 标注（直接到 dataset/annotations）
-    annotations_dir = await run_labeling_async(frames_dir, dataset_dir, output_name, args.workers, api_key, use_rag=args.rag)
+    # 确定分类器类型
+    sign_classifier_type = args.sign_classifier
+    if sign_classifier_type is None and args.clip_rag:
+        sign_classifier_type = "clip"  # 兼容旧参数
+    
+    annotations_dir = await run_labeling_async(
+        frames_dir, dataset_dir, output_name, args.workers, api_key, 
+        use_rag=args.rag, model_type=model_type, use_clip_rag=args.clip_rag,
+        sign_classifier_type=sign_classifier_type
+    )
     if not annotations_dir:
         return
     

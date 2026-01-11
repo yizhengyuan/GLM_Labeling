@@ -119,3 +119,8 @@ def run(prefix, limit, workers, rag, images_dir, output_dir, no_resume):
     if results.get('skipped', 0) > 0:
         click.echo(f"⏭️  跳过: {results['skipped']} (已处理)")
 
+
+
+
+
+

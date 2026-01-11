@@ -11,11 +11,17 @@
 - 随机打乱候选顺序（消除位置偏差）
 - 先描述后匹配（提高准确率）
 - 支持自定义 Prompt
+- 支持 GLM 和 Gemini 双后端
 
 用法:
     from glm_labeling.core.sign_classifier_v2 import SignClassifierV2
 
-    classifier = SignClassifierV2(api_key="xxx")
+    # GLM 后端
+    classifier = SignClassifierV2(api_key="xxx", model_choice="glm")
+    
+    # Gemini 后端
+    classifier = SignClassifierV2(model_choice="gemini-2.5-flash")
+    
     label, desc, raw = await classifier.classify(image_path, bbox)
 """
 
@@ -29,6 +35,14 @@ from typing import List, Tuple, Optional
 
 import httpx
 from PIL import Image
+
+# Gemini SDK (可选导入)
+try:
+    from google import genai
+    from google.genai import types
+    GEMINI_AVAILABLE = True
+except ImportError:
+    GEMINI_AVAILABLE = False
 
 
 # ============================================================================
@@ -141,18 +155,33 @@ DEFAULT_CLASSIFY_PROMPT = """请仔细观察这个交通标志图片。
 - 形状：什么形状？（圆形/三角形/方形/菱形）
 - 内容：有什么文字、数字或图案？
 
-## 第二步：从以下 69 个选项中选择最匹配的
+## 第二步：判断是否需要返回 0（优先检查！）
+
+以下类型必须返回 0，不要强行匹配：
+
+1.【方向/导航/路名牌】
+  - 蓝底或绿底，有地名、路名、箭头、公里数
+  - 例如：往某地 X km、高速出口指示、街道名称牌
+
+2.【距离倒计时牌】
+  - 绿底配白色斜条（1条/2条/3条）
+  - 表示距离出口 100m/200m/300m
+
+3.【公交/轻轨专用道标志】
+  - 有"Bus"、"巴士"、公交车图案的蓝底牌
+
+4.【看不清/无法确定】
+  - 图片模糊、过曝、遮挡、太小
+
+如果是以上任何一种 → 直接返回 0
+
+## 第三步：从以下 69 个选项中选择最匹配的
 {candidate_list}
 
-## 返回规则：
-- 如果图片模糊看不清，返回 0
-- 如果是导航牌、方向牌、倒计时距离牌（绿底斜条），返回 0
-- 如果没有匹配的选项，返回 0
-- 如果能确定匹配，返回对应编号
-
-请按格式返回：
+## 返回格式：
 描述：[你看到的特征]
-选择：[编号]"""
+判断：[是否属于必须返回0的类型]
+选择：[编号，如不确定则填0]"""
 
 
 # 数字细化 Prompt
@@ -180,13 +209,24 @@ class SignClassifierV2:
     - 69 个核心标志 + other
     - 随机打乱消除位置偏差
     - 先描述后匹配
+    - 支持 GLM 和 Gemini 双后端
     """
+    
+    # Gemini 模型映射
+    GEMINI_MODELS = {
+        "gemini": "gemini-2.5-flash",
+        "gemini-2.5-flash": "gemini-2.5-flash",
+        "gemini-2.0-flash": "gemini-2.0-flash",
+        "gemini-2.5-pro": "gemini-2.5-pro",
+        "gemini-3-pro": "gemini-3-pro-preview",
+    }
     
     def __init__(
         self,
         api_key: str = None,
         api_base: str = "https://api.z.ai/api/paas/v4",
         model: str = "glm-4.6v",
+        model_choice: str = "glm",
         timeout: float = 45.0,
         use_shuffle: bool = True,
         prompt_template: str = None
@@ -195,26 +235,43 @@ class SignClassifierV2:
         初始化分类器
         
         Args:
-            api_key: API Key（可从环境变量 ZAI_API_KEY 获取）
-            api_base: API 基础 URL
-            model: 模型名称
+            api_key: API Key（GLM 用 ZAI_API_KEY，Gemini 用 GOOGLE_API_KEY）
+            api_base: API 基础 URL (仅 GLM)
+            model: GLM 模型名称
+            model_choice: 后端选择 ("glm" / "gemini" / "gemini-2.5-flash" 等)
             timeout: 请求超时时间
             use_shuffle: 是否随机打乱候选顺序
             prompt_template: 自定义 Prompt 模板
         """
-        self.api_key = api_key or os.getenv("ZAI_API_KEY")
-        self.api_base = api_base
-        self.model = model
+        self.model_choice = model_choice
         self.timeout = timeout
         self.use_shuffle = use_shuffle
         self.prompt_template = prompt_template or DEFAULT_CLASSIFY_PROMPT
         
         self._client = None
+        self._gemini_client = None
+        
+        # 根据模型选择初始化
+        if model_choice.startswith("gemini"):
+            if not GEMINI_AVAILABLE:
+                raise ImportError("Gemini SDK 未安装，请运行: pip install google-genai")
+            
+            google_api_key = os.getenv("GOOGLE_API_KEY")
+            if not google_api_key:
+                raise ValueError("请设置 GOOGLE_API_KEY 环境变量")
+            
+            self.gemini_model_name = self.GEMINI_MODELS.get(model_choice, "gemini-2.5-flash")
+            self._gemini_client = genai.Client(api_key=google_api_key)
+        else:
+            # GLM 后端
+            self.api_key = api_key or os.getenv("ZAI_API_KEY")
+            self.api_base = api_base
+            self.model = model
     
     @property
     def client(self) -> httpx.AsyncClient:
-        """懒加载 HTTP 客户端"""
-        if self._client is None:
+        """懒加载 HTTP 客户端 (GLM)"""
+        if self._client is None and not self.model_choice.startswith("gemini"):
             self._client = httpx.AsyncClient(
                 base_url=self.api_base,
                 headers={
@@ -285,23 +342,39 @@ class SignClassifierV2:
             # 4. 构建 Prompt
             prompt = self.prompt_template.format(candidate_list=candidate_list)
             
-            # 5. 调用 API
-            response = await self.client.post(
-                "/chat/completions",
-                json={
-                    "model": self.model,
-                    "messages": [{
-                        "role": "user",
-                        "content": [
-                            {"type": "image_url", "image_url": {"url": base64_url}},
-                            {"type": "text", "text": prompt}
-                        ]
-                    }],
-                    "temperature": 0.1
-                }
-            )
-            response.raise_for_status()
-            raw_output = response.json()["choices"][0]["message"]["content"].strip()
+            # 5. 调用 API (区分 GLM / Gemini)
+            if self.model_choice.startswith("gemini"):
+                # Gemini API
+                with open(temp_path, "rb") as f:
+                    img_bytes = f.read()
+                
+                response = self._gemini_client.models.generate_content(
+                    model=self.gemini_model_name,
+                    contents=[
+                        types.Part.from_bytes(data=img_bytes, mime_type="image/jpeg"),
+                        prompt
+                    ],
+                    config=types.GenerateContentConfig(temperature=0.1)
+                )
+                raw_output = response.text.strip()
+            else:
+                # GLM API
+                response = await self.client.post(
+                    "/chat/completions",
+                    json={
+                        "model": self.model,
+                        "messages": [{
+                            "role": "user",
+                            "content": [
+                                {"type": "image_url", "image_url": {"url": base64_url}},
+                                {"type": "text", "text": prompt}
+                            ]
+                        }],
+                        "temperature": 0.1
+                    }
+                )
+                response.raise_for_status()
+                raw_output = response.json()["choices"][0]["message"]["content"].strip()
             
             # 6. 解析结果
             description = ""
@@ -327,22 +400,35 @@ class SignClassifierV2:
             if refine_numbers and label in DETAIL_PROMPTS:
                 detail_info = DETAIL_PROMPTS[label]
                 
-                response2 = await self.client.post(
-                    "/chat/completions",
-                    json={
-                        "model": self.model,
-                        "messages": [{
-                            "role": "user",
-                            "content": [
-                                {"type": "image_url", "image_url": {"url": base64_url}},
-                                {"type": "text", "text": detail_info["question"]}
-                            ]
-                        }],
-                        "temperature": 0.1
-                    }
-                )
-                response2.raise_for_status()
-                detail_text = response2.json()["choices"][0]["message"]["content"].strip()
+                if self.model_choice.startswith("gemini"):
+                    # Gemini API
+                    response2 = self._gemini_client.models.generate_content(
+                        model=self.gemini_model_name,
+                        contents=[
+                            types.Part.from_bytes(data=img_bytes, mime_type="image/jpeg"),
+                            detail_info["question"]
+                        ],
+                        config=types.GenerateContentConfig(temperature=0.1)
+                    )
+                    detail_text = response2.text.strip()
+                else:
+                    # GLM API
+                    response2 = await self.client.post(
+                        "/chat/completions",
+                        json={
+                            "model": self.model,
+                            "messages": [{
+                                "role": "user",
+                                "content": [
+                                    {"type": "image_url", "image_url": {"url": base64_url}},
+                                    {"type": "text", "text": detail_info["question"]}
+                                ]
+                            }],
+                            "temperature": 0.1
+                        }
+                    )
+                    response2.raise_for_status()
+                    detail_text = response2.json()["choices"][0]["message"]["content"].strip()
                 
                 detail_numbers = re.findall(r'\d+', detail_text)
                 if detail_numbers:

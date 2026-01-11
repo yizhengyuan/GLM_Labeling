@@ -60,6 +60,7 @@
 | 🟢 车辆 | 5 | 绿色 | `vehicle`, `vehicle_braking`, `vehicle_turning_left`... |
 | 🔵 交通标志 | 188 | 蓝色 | `Speed_limit`, `No_stopping`, `Direction_sign`... |
 | 🟠 施工标志 | 2 | 橙色 | `traffic_cone`, `construction_barrier` |
+| ⚠️ 干扰类型 | 3 | 灰色 | `lowlight`, `blur`, `glare` |
 
 ### 🚗 车辆行为标签说明
 
@@ -71,6 +72,13 @@
 - `vehicle_double_flash` - 双闪（危险警告灯）
 
 > 💡 **扩展能力**：如需区分车辆基础类型，可通过修改 prompt 增加细分标签（如 `car`, `truck`, `bus`, `motorcycle`, `bicycle`, `taxi`, `suv` 等），实现更丰富的车辆分类。
+
+### ⚠️ 干扰类型标签 (v1.2 新增)
+
+用于标记因图像质量问题无法准确识别的情况（参考 GLARE 论文）：
+- `lowlight` - 低光照（夜间、隧道、阴影）
+- `blur` - 模糊（运动模糊、对焦模糊、雨水模糊）
+- `glare` - 眩光（阳光直射、逆光、反光）
 
 ### 🚦 交通标志细粒度识别
 

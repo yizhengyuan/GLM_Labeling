@@ -7,13 +7,14 @@
 from typing import Optional
 
 
-# 类别关键词映射
+# 类别关键词映射（按 ID 顺序）
+# ID 0: traffic_sign, ID 1: pedestrian, ID 2: vehicle, ID 3: small_obstacle
 CATEGORY_KEYWORDS = {
+    "traffic_sign": ["sign", "speed", "limit", "no_", "traffic", "light", "stop", 
+                     "give_way", "direction", "exit", "lane", "countdown"],
     "pedestrian": ["pedestrian", "person", "people", "child", "cyclist", "crowd"],
     "vehicle": ["car", "truck", "bus", "motorcycle", "bicycle", "van", "suv", "taxi", "vehicle"],
-    "construction": ["cone", "construction", "barrier", "road_work", "detour"],
-    "traffic_sign": ["sign", "speed", "limit", "no_", "traffic", "light", "stop", 
-                     "give_way", "direction", "exit", "lane", "countdown"]
+    "small_obstacle": ["cone", "construction", "barrier", "road_work", "detour"],
 }
 
 # 车辆类型列表
@@ -31,7 +32,7 @@ def get_category(label: str) -> str:
         label: 原始标签
         
     Returns:
-        类别名称：pedestrian, vehicle, construction, traffic_sign, unknown
+        类别名称：traffic_sign(ID0), pedestrian(ID1), vehicle(ID2), small_obstacle(ID3), unknown
     """
     label_lower = label.lower().replace(" ", "_").replace("-", "_")
     
@@ -115,10 +116,10 @@ def get_category_color(category: str) -> str:
         颜色名称
     """
     colors = {
+        "traffic_sign": "blue",
         "pedestrian": "red",
         "vehicle": "green",
-        "traffic_sign": "blue",
-        "construction": "orange",
+        "small_obstacle": "orange",
         "unknown": "gray"
     }
     return colors.get(category, "gray")
@@ -135,10 +136,10 @@ def get_category_emoji(category: str) -> str:
         emoji 字符
     """
     emojis = {
+        "traffic_sign": "🔵",
         "pedestrian": "🔴",
         "vehicle": "🟢",
-        "traffic_sign": "🔵",
-        "construction": "🟠",
+        "small_obstacle": "🟠",
         "unknown": "⚪"
     }
     return emojis.get(category, "⚪")

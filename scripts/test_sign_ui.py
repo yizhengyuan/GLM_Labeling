@@ -172,9 +172,15 @@ def create_ui():
         judgment = sample.get("judgment")
         judgment_icon = {"correct": "✅", "wrong": "❌", "uncertain": "❓"}.get(judgment, "⚪")
         
+        # 提取文件名
+        img_path = Path(sample["image"])
+        file_name = img_path.name
+        
         info = f"📍 样本 {current_idx[0] + 1}/{len(test_samples)} {judgment_icon}\n"
-        info += f"📁 来源: {sample['source']}\n"
-        info += f"🏷️ 旧标签: {sample['old_label'][:50]}..."
+        info += f"📄 文件: {file_name}\n"
+        info += f"📁 路径: {sample['image']}\n"
+        info += f"📦 来源: {sample['source']}\n"
+        info += f"🏷️ 旧标签: {sample['old_label'][:40]}..."
         
         # 如果有新预测，显示对比
         result = ""
@@ -367,7 +373,7 @@ def create_ui():
             
             with gr.Column():
                 crop_image = gr.Image(label="🔍 标志放大 (4x)", type="pil", height=200)
-                info_text = gr.Textbox(label="样本信息", interactive=False, lines=3)
+                info_text = gr.Textbox(label="样本信息", interactive=False, lines=5)
         
         # ===== 导航按钮 =====
         with gr.Row():

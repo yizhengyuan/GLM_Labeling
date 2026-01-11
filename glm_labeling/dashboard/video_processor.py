@@ -44,46 +44,71 @@ class VideoProcessor:
         output_dir: Path,
         fps: int = 3,
         output_prefix: str = None,
-        on_progress: Callable[[float], None] = None
+        on_progress: Callable[[float], None] = None,
+        keyframes_only: bool = True,
+        lossless: bool = True
     ) -> tuple:
         """
         从视频抽帧
-        
+
         Args:
             video_name: 视频名称（不含扩展名）
             output_dir: 输出目录
             fps: 抽帧率
             output_prefix: 输出文件名前缀（默认与视频同名）
             on_progress: 进度回调 (0.0 ~ 1.0)
-            
+            keyframes_only: 是否只抽取 I 帧（关键帧），默认 True
+            lossless: 是否无损输出（PNG），默认 True
+
         Returns:
             (frames_dir, frame_count) 或 (None, 0) 失败时
         """
         video_path = self.get_video_path(video_name)
         if not video_path:
             return None, 0
-        
+
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # 清空旧帧
         for old_frame in output_dir.glob("*.jpg"):
             old_frame.unlink()
-        
+        for old_frame in output_dir.glob("*.png"):
+            old_frame.unlink()
+
         prefix = output_prefix or video_name
-        output_pattern = str(output_dir / f"{prefix}_%06d.jpg")
-        
+
         # 获取视频时长（用于计算进度）
         duration = self._get_video_duration(video_path)
-        
-        cmd = [
-            "ffmpeg", "-i", str(video_path),
-            "-vf", f"fps={fps}",
-            "-q:v", "2",
-            output_pattern,
-            "-y",
-            "-progress", "pipe:1"
-        ]
+
+        # 构建视频滤镜：只抽 I 帧 或 均匀抽帧
+        if keyframes_only:
+            vf_filter = f"select='eq(pict_type,I)',fps={fps}"
+        else:
+            vf_filter = f"fps={fps}"
+
+        # PNG 无损 或 JPEG 高质量
+        if lossless:
+            output_pattern = str(output_dir / f"{prefix}_%06d.png")
+            cmd = [
+                "ffmpeg", "-i", str(video_path),
+                "-vf", vf_filter,
+                "-vsync", "vfr",
+                output_pattern,
+                "-y",
+                "-progress", "pipe:1"
+            ]
+        else:
+            output_pattern = str(output_dir / f"{prefix}_%06d.jpg")
+            cmd = [
+                "ffmpeg", "-i", str(video_path),
+                "-vf", vf_filter,
+                "-vsync", "vfr",
+                "-q:v", "2",
+                output_pattern,
+                "-y",
+                "-progress", "pipe:1"
+            ]
         
         try:
             process = subprocess.Popen(
@@ -113,7 +138,7 @@ class VideoProcessor:
             if on_progress:
                 on_progress(1.0)
             
-            frame_count = len(list(output_dir.glob("*.jpg")))
+            frame_count = len(list(output_dir.glob("*.jpg")) + list(output_dir.glob("*.png")))
             return output_dir, frame_count
             
         except Exception as e:

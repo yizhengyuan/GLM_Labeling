@@ -38,10 +38,17 @@ test_images/
 # 输出目录
 output/
 dataset_output/
+extracted_signs/
+pedestrian_crossing_results/
+unclear_reclassification/
+dataset_release/
 
 # 临时文件
 temp_frames/
 /tmp/
+
+# 外部仓库
+htsrb_repo/
 
 # ============ 第三方数据 ============
 # 交通标志库（需要单独下载）
@@ -49,11 +56,21 @@ traffic_sign_data/
 
 # 向量数据库缓存
 .chromadb/
+raw_data/chroma_*/
+raw_data/signs/clip_debug/
+
+# ============ 个人文件 ============
+docs/resume/
+docs/diary/
 
 # ============ 日志 ============
 *.log
 logs/
+ui_log.txt
 
 # ============ 保留示例 ============
 !examples/
 !examples/**
+
+# Local Netlify folder
+.netlify
