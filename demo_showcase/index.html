@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>香港交通标志数据收集与标注项目</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #e4e4e4;
+            line-height: 1.6;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+        h1 span { color: #00d9ff; }
+        .subtitle {
+            color: #888;
+            font-size: 1.1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 60px;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #00d9ff;
+        }
+        .stat-label {
+            color: #888;
+            margin-top: 8px;
+        }
+
+        section {
+            margin-bottom: 60px;
+        }
+        h2 {
+            font-size: 1.8rem;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid rgba(0,217,255,0.3);
+        }
+        h2 span { color: #00d9ff; }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+        }
+        .image-card {
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .image-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0,217,255,0.2);
+        }
+        .image-card img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: contain;
+            background: rgba(255,255,255,0.02);
+            padding: 8px;
+        }
+        .image-card .caption {
+            padding: 12px;
+            font-size: 0.85rem;
+            color: #888;
+            text-align: center;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+        .info-table th, .info-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .info-table th {
+            background: rgba(0,217,255,0.1);
+            color: #00d9ff;
+            font-weight: 600;
+        }
+        .info-table tr:hover {
+            background: rgba(255,255,255,0.02);
+        }
+
+        .tech-flow {
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            padding: 24px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.8;
+        }
+        .tech-flow .arrow { color: #00d9ff; }
+        .tech-flow .step { color: #51cf66; }
+
+        footer {
+            text-align: center;
+            padding: 40px 0;
+            color: #666;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            margin-top: 60px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><span>香港交通标志</span> 数据收集与标注项目</h1>
+            <p class="subtitle">Hong Kong Traffic Sign Dataset Collection & Labeling</p>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">26</div>
+                <div class="stat-label">视频数量</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">8h</div>
+                <div class="stat-label">视频总时长</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">216km</div>
+                <div class="stat-label">骑行路线里程</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">12,011</div>
+                <div class="stat-label">提取标志图片</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">188</div>
+                <div class="stat-label">标签类别数</div>
+            </div>
+        </div>
+
+        <section>
+            <h2><span>提取的</span>交通标志样本</h2>
+            <p style="color:#888; margin-bottom:20px;">从 4K 骑行视频中自动检测并裁剪的交通标志</p>
+            <div class="image-grid">
+                <div class="image-card">
+                    <img src="extracted_signs/01_direction_central.png" alt="方向标志">
+                </div>
+                <div class="image-card">
+                    <img src="extracted_signs/02_highway_signs.png" alt="高速公路标志">
+                </div>
+                <div class="image-card">
+                    <img src="extracted_signs/03_keep_left.png" alt="靠左行驶">
+                </div>
+                <div class="image-card">
+                    <img src="extracted_signs/04_pok_fu_lam.png" alt="薄扶林道">
+                </div>
+                <div class="image-card">
+                    <img src="extracted_signs/05_steep_hill.png" alt="陡坡提示">
+                </div>
+                <div class="image-card">
+                    <img src="extracted_signs/06_airport_express.png" alt="机场快线">
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2><span>188 种</span>香港标准交通标志 (部分展示)</h2>
+            <p style="color:#888; margin-bottom:20px;">用于细粒度标注的参考标志图</p>
+            <div class="image-grid" id="all-signs-grid">
+                <!-- 50 signs will be loaded here -->
+            </div>
+        </section>
+        <script>
+            const signNames = [
+                "Ahead_only",
+                "Bend_to_left_ahead",
+                "Children_ahead",
+                "Cross_roads_ahead",
+                "Cyclists_ahead",
+                "Direction_sign",
+                "Double_bend_ahead_first_to_right",
+                "Dual_carriageway_ahead",
+                "Give_way_to_traffic_on_major_road",
+                "Keep_right_(keep_left_if_symbol_reversed)",
+                "Level_crossing_with_barrier_ahead",
+                "No_bicycles",
+                "No_buses_and_coaches",
+                "No_entry_for_all_vehicles",
+                "No_goods_vehicles",
+                "No_motor_cycles_or_motor_tricycles",
+                "No_motor_vehicles",
+                "No_overtaking",
+                "No_parking",
+                "No_pedestrians",
+                "No_stopping",
+                "No_stopping_at_any_time",
+                "No_use_of_horn",
+                "One_way_traffic",
+                "Pedestrian_crossing_ahead",
+                "Pedestrians_Ahead",
+                "Playground_ahead",
+                "Red_light_speed_camera_ahead",
+                "Road_hump_ahead",
+                "Road_narrows_on_both_sides_ahead",
+                "Road_works_ahead",
+                "School_ahead",
+                "Sharp_deviation_of_route_to_left",
+                "Side_road_to_left_ahead",
+                "Slippery_road_ahead",
+                "Speed_limit_(in_km_h)",
+                "Staggered_junction_ahead",
+                "Steep_hill_downwards_ahead",
+                "Steep_hill_upwards_ahead",
+                "Stop_and_give_way",
+                "T-junction_ahead",
+                "Traffic_lights_ahead",
+                "Traffic_merging_from_left",
+                "Two-way_traffic_ahead",
+                "Uneven_road_surface_ahead",
+                "Use_low_gear",
+                "Variable_speed_limit_(in_km_h)",
+                "Visually_impaired_persons_ahead",
+                "Way_in_for_vehicles",
+                "Way_out_for_vehicles"
+            ];
+
+            const grid = document.getElementById('all-signs-grid');
+            signNames.forEach(name => {
+                const card = document.createElement('div');
+                card.className = 'image-card';
+                const displayName = name.replace(/_/g, ' ').substring(0, 40) + (name.length > 40 ? '...' : '');
+                card.innerHTML = `
+                    <img src="reference_signs/${name}.png" alt="${name}" loading="lazy">
+                    <div class="caption" title="${name.replace(/_/g, ' ')}">${displayName}</div>
+                `;
+                grid.appendChild(card);
+            });
+        </script>
+
+        <section>
+            <h2><span>数据采集</span>覆盖区域</h2>
+            <table class="info-table">
+                <tr>
+                    <th>区域</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>Hong Kong Island (香港岛)</td>
+                    <td>港岛北部、南部道路</td>
+                </tr>
+                <tr>
+                    <td>Kowloon (九龙)</td>
+                    <td>九龙半岛主要道路</td>
+                </tr>
+                <tr>
+                    <td>Tuen Mun (屯门)</td>
+                    <td>新界西部</td>
+                </tr>
+                <tr>
+                    <td>Sha Tin (沙田)</td>
+                    <td>新界中部</td>
+                </tr>
+                <tr>
+                    <td>Lantao Island (大屿山)</td>
+                    <td>机场、东涌一带</td>
+                </tr>
+            </table>
+        </section>
+
+        <section>
+            <h2><span>场景</span>覆盖</h2>
+            <table class="info-table">
+                <tr>
+                    <th>场景</th>
+                    <th>视频数</th>
+                    <th>时长</th>
+                    <th>占比</th>
+                </tr>
+                <tr>
+                    <td>白天</td>
+                    <td>19 个</td>
+                    <td>347 分钟</td>
+                    <td>73%</td>
+                </tr>
+                <tr>
+                    <td>夜晚</td>
+                    <td>7 个</td>
+                    <td>126 分钟</td>
+                    <td>27%</td>
+                </tr>
+            </table>
+        </section>
+
+        <section>
+            <h2><span>标注</span>工具</h2>
+            <p style="color:#888; margin-bottom:20px;">自研标注工具，支持快捷键操作</p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                <a href="tools/filter_ui.html" style="text-decoration: none;">
+                    <div class="stat-card" style="cursor: pointer; transition: transform 0.2s;">
+                        <div style="font-size: 1.3rem; color: #00d9ff; margin-bottom: 8px;">筛选工具</div>
+                        <div style="color: #888; font-size: 0.9rem;">快速分类: Valid / Unclear / Not Sign</div>
+                        <div style="margin-top: 12px; color: #666; font-size: 0.8rem;">sign_filter_ui.py → 点击查看演示</div>
+                    </div>
+                </a>
+                <a href="tools/labeling_ui.html" style="text-decoration: none;">
+                    <div class="stat-card" style="cursor: pointer; transition: transform 0.2s;">
+                        <div style="font-size: 1.3rem; color: #00d9ff; margin-bottom: 8px;">标注工具</div>
+                        <div style="color: #888; font-size: 0.9rem;">对照 188 种参考图细粒度标注</div>
+                        <div style="margin-top: 12px; color: #666; font-size: 0.8rem;">sign_labeling_ui.py → 点击查看演示</div>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <section>
+            <h2><span>技术</span>流程</h2>
+            <div class="tech-flow"><span class="step">原始视频 (26段, 8小时)</span>
+        <span class="arrow">↓</span>
+<span class="step">[视频切分]</span> 按场景切分为片段
+        <span class="arrow">↓</span>
+<span class="step">[帧提取]</span> 3 FPS 提取关键帧
+        <span class="arrow">↓</span>
+<span class="step">[VLM 检测]</span> GLM-4.6V 目标检测
+        <span class="arrow">↓</span>
+<span class="step">[标志裁剪]</span> 根据 bbox 裁剪交通标志
+        <span class="arrow">↓</span>
+<span class="step">[人工筛选]</span> 过滤无效图片
+        <span class="arrow">↓</span>
+<span class="step">[人工标注]</span> 匹配 188 种标准标志
+        <span class="arrow">↓</span>
+<span class="step">[模型微调]</span> 训练分类头</div>
+        </section>
+
+        <footer>
+            <p>Hong Kong Traffic Sign Dataset Project</p>
+            <p style="margin-top:8px; font-size:0.85rem;">Updated: 2025.12.20</p>
+        </footer>
+    </div>
+</body>
+</html>

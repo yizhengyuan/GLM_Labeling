@@ -18,7 +18,7 @@ from flask import Flask, render_template_string, request, jsonify, send_file
 app = Flask(__name__)
 
 # 参考标志目录（188种标准交通标志）
-REFERENCE_SIGNS_DIR = Path(__file__).parent.parent / "raw_data" / "signs"
+REFERENCE_SIGNS_DIR = Path(__file__).parent.parent / "raw_data" / "188_signs_revised"
 
 
 class EvaluationData:
@@ -27,7 +27,8 @@ class EvaluationData:
     def __init__(self, base_dir: str, reference_dir: Path = None, frequency_file: Path = None):
         self.base_dir = Path(base_dir)
         self.predictions_file = self.base_dir / "predictions.json"
-        self.annotations_file = self.base_dir / "annotations.json"
+        # 使用目录名作为标签文件名前缀
+        self.annotations_file = self.base_dir / f"{self.base_dir.name}_labels.json"
         self.export_file = self.base_dir / "evaluation_report.json"
         self.reference_dir = reference_dir or REFERENCE_SIGNS_DIR
         self.frequency_file = frequency_file
@@ -84,7 +85,21 @@ class EvaluationData:
                 print(f"警告: 无法加载频率文件: {e}")
 
     def _save_annotations(self):
-        """保存标注到文件"""
+        """保存标注到文件，包含统计信息"""
+        # 计算统计
+        total = len([k for k in self.annotations if not k.startswith('_')])
+        correct = sum(1 for k, v in self.annotations.items() if not k.startswith('_') and v.get('is_correct') == True)
+        incorrect = sum(1 for k, v in self.annotations.items() if not k.startswith('_') and v.get('is_correct') == False)
+        accuracy = round(correct / (correct + incorrect) * 100, 1) if (correct + incorrect) > 0 else 0
+
+        # 添加统计信息
+        self.annotations['_summary'] = {
+            'total': total,
+            'correct': correct,
+            'incorrect': incorrect,
+            'accuracy': accuracy
+        }
+
         with open(self.annotations_file, 'w') as f:
             json.dump(self.annotations, f, indent=2, ensure_ascii=False)
 
@@ -304,32 +319,54 @@ def set_folder():
 @app.route('/api/folders')
 def list_folders():
     """列出可用的评估文件夹"""
-    base_dir = Path(__file__).parent.parent / "extracted_signs" / "auto_label_tests"
+    # 扫描多个目录
+    search_dirs = [
+        Path(__file__).parent.parent / "extracted_signs" / "auto_label_tests",
+        Path(__file__).parent.parent / "extracted_signs"  # 也扫描 extracted_signs 根目录
+    ]
     folders = []
+    seen_names = set()
 
-    if base_dir.exists():
+    for base_dir in search_dirs:
+        if not base_dir.exists():
+            continue
         for item in base_dir.iterdir():
             if item.is_dir() and (item / "predictions.json").exists():
+                # 避免重复
+                folder_key = str(item)
+                if folder_key in seen_names:
+                    continue
+                seen_names.add(folder_key)
+
                 # 统计信息
                 pred_file = item / "predictions.json"
-                with open(pred_file, 'r') as f:
-                    pred_data = json.load(f)
-                    total = len(pred_data.get('predictions', {}))
+                try:
+                    with open(pred_file, 'r') as f:
+                        pred_data = json.load(f)
+                        total = len(pred_data.get('predictions', {}))
+                except:
+                    total = 0
 
                 # 检查是否有标注
                 ann_file = item / "annotations.json"
                 annotated = 0
                 if ann_file.exists():
-                    with open(ann_file, 'r') as f:
-                        annotations = json.load(f)
-                        annotated = len(annotations)
+                    try:
+                        with open(ann_file, 'r') as f:
+                            annotations = json.load(f)
+                            annotated = len(annotations)
+                    except:
+                        pass
 
                 folders.append({
                     'name': item.name,
+                    'path': str(item),  # 添加完整路径
                     'total': total,
                     'annotated': annotated
                 })
 
+    # 按名称排序
+    folders.sort(key=lambda x: x['name'])
     return jsonify({'folders': folders})
 
 
@@ -340,9 +377,17 @@ def get_image(filename):
     data = get_eval_data()
     # 解码 URL 编码的文件名
     decoded_filename = unquote(filename)
-    image_path = data.base_dir / decoded_filename
-    if image_path.exists():
-        return send_file(str(image_path))
+
+    # 尝试多个可能的路径
+    possible_paths = [
+        data.base_dir / decoded_filename,
+        data.base_dir / "pictures" / decoded_filename,
+    ]
+
+    for image_path in possible_paths:
+        if image_path.exists():
+            return send_file(str(image_path))
+
     return "Not found", 404
 
 

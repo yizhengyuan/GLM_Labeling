@@ -1,0 +1,299 @@
+{
+  "videos": [
+    {
+      "file": "DJI_0013_1080.mp4",
+      "source": "DJI_1080p",
+      "path": "/Volumes/LQ1000/DJI_1080p/DJI_0013_1080.mp4",
+      "duration_min": 31.7,
+      "size_gb": 3.19,
+      "record_date": "2025-04-30",
+      "record_time": "19:03:21",
+      "hour": 19,
+      "day_night": "night"
+    },
+    {
+      "file": "DJI_0014_1080.mp4",
+      "source": "DJI_1080p",
+      "path": "/Volumes/LQ1000/DJI_1080p/DJI_0014_1080.mp4",
+      "duration_min": 6.2,
+      "size_gb": 0.62,
+      "record_date": "2025-04-30",
+      "record_time": "19:35:05",
+      "hour": 19,
+      "day_night": "night"
+    },
+    {
+      "file": "DJI_0015_1080.mp4",
+      "source": "DJI_1080p",
+      "path": "/Volumes/LQ1000/DJI_1080p/DJI_0015_1080.mp4",
+      "duration_min": 31.3,
+      "size_gb": 3.15,
+      "record_date": "2025-04-30",
+      "record_time": "20:23:24",
+      "hour": 20,
+      "day_night": "night"
+    },
+    {
+      "file": "DJI_0016_1080.mp4",
+      "source": "DJI_1080p",
+      "path": "/Volumes/LQ1000/DJI_1080p/DJI_0016_1080.mp4",
+      "duration_min": 5.4,
+      "size_gb": 0.54,
+      "record_date": "2025-04-30",
+      "record_time": "20:54:45",
+      "hour": 20,
+      "day_night": "night"
+    },
+    {
+      "file": "DJI_0017_1080.mp4",
+      "source": "DJI_1080p",
+      "path": "/Volumes/LQ1000/DJI_1080p/DJI_0017_1080.mp4",
+      "duration_min": 36.8,
+      "size_gb": 3.7,
+      "record_date": "2025-05-18",
+      "record_time": "07:07:32",
+      "hour": 7,
+      "day_night": "day"
+    },
+    {
+      "file": "DJI_0019_1080.mp4",
+      "source": "DJI_1080p",
+      "path": "/Volumes/LQ1000/DJI_1080p/DJI_0019_1080.mp4",
+      "duration_min": 41.5,
+      "size_gb": 4.18,
+      "record_date": "2025-06-02",
+      "record_time": "17:50:38",
+      "hour": 17,
+      "day_night": "day"
+    },
+    {
+      "file": "DJI_0020_1080.mp4",
+      "source": "DJI_1080p",
+      "path": "/Volumes/LQ1000/DJI_1080p/DJI_0020_1080.mp4",
+      "duration_min": 25.5,
+      "size_gb": 2.57,
+      "record_date": "2025-06-02",
+      "record_time": "18:32:11",
+      "hour": 18,
+      "day_night": "night"
+    },
+    {
+      "file": "DJI_0021_1080.mp4",
+      "source": "DJI_1080p",
+      "path": "/Volumes/LQ1000/DJI_1080p/DJI_0021_1080.mp4",
+      "duration_min": 24.7,
+      "size_gb": 2.48,
+      "record_date": "2025-06-21",
+      "record_time": "09:17:41",
+      "hour": 9,
+      "day_night": "day"
+    },
+    {
+      "file": "DJI_0022_1080.mp4",
+      "source": "DJI_1080p",
+      "path": "/Volumes/LQ1000/DJI_1080p/DJI_0022_1080.mp4",
+      "duration_min": 40.6,
+      "size_gb": 4.08,
+      "record_date": "2025-06-21",
+      "record_time": "11:05:28",
+      "hour": 11,
+      "day_night": "day"
+    },
+    {
+      "file": "DJI_0023_1080.mp4",
+      "source": "DJI_1080p",
+      "path": "/Volumes/LQ1000/DJI_1080p/DJI_0023_1080.mp4",
+      "duration_min": 5.8,
+      "size_gb": 0.58,
+      "record_date": "2025-06-21",
+      "record_time": "11:46:04",
+      "hour": 11,
+      "day_night": "day"
+    },
+    {
+      "file": "DJI_0024_1080.mp4",
+      "source": "DJI_1080p",
+      "path": "/Volumes/LQ1000/DJI_1080p/DJI_0024_1080.mp4",
+      "duration_min": 29.2,
+      "size_gb": 2.93,
+      "record_date": "2025-06-21",
+      "record_time": "12:17:12",
+      "hour": 12,
+      "day_night": "day"
+    },
+    {
+      "file": "DJI_0025_1080.mp4",
+      "source": "DJI_1080p",
+      "path": "/Volumes/LQ1000/DJI_1080p/DJI_0025_1080.mp4",
+      "duration_min": 13.0,
+      "size_gb": 1.31,
+      "record_date": "2025-06-22",
+      "record_time": "18:33:05",
+      "hour": 18,
+      "day_night": "night"
+    },
+    {
+      "file": "DJI_0026_1080.mp4",
+      "source": "DJI_1080p",
+      "path": "/Volumes/LQ1000/DJI_1080p/DJI_0026_1080.mp4",
+      "duration_min": 16.9,
+      "size_gb": 1.7,
+      "record_date": "2025-06-22",
+      "record_time": "18:51:15",
+      "hour": 18,
+      "day_night": "night"
+    },
+    {
+      "file": "DJI_0027_1080.mp4",
+      "source": "DJI_1080p",
+      "path": "/Volumes/LQ1000/DJI_1080p/DJI_0027_1080.mp4",
+      "duration_min": 21.6,
+      "size_gb": 2.17,
+      "record_date": "2025-07-05",
+      "record_time": "08:42:25",
+      "hour": 8,
+      "day_night": "day"
+    },
+    {
+      "file": "DJI_0028_1080.mp4",
+      "source": "DJI_1080p",
+      "path": "/Volumes/LQ1000/DJI_1080p/DJI_0028_1080.mp4",
+      "duration_min": 30.0,
+      "size_gb": 3.02,
+      "record_date": "2025-07-05",
+      "record_time": "09:17:33",
+      "hour": 9,
+      "day_night": "day"
+    },
+    {
+      "file": "DJI_0029_1080.mp4",
+      "source": "DJI_1080p",
+      "path": "/Volumes/LQ1000/DJI_1080p/DJI_0029_1080.mp4",
+      "duration_min": 30.8,
+      "size_gb": 3.1,
+      "record_date": "2025-07-05",
+      "record_time": "10:12:07",
+      "hour": 10,
+      "day_night": "day"
+    },
+    {
+      "file": "DJI_004_1080.mp4",
+      "source": "DJI_1080p",
+      "path": "/Volumes/LQ1000/DJI_1080p/DJI_004_1080.mp4",
+      "duration_min": 8.4,
+      "size_gb": 0.85,
+      "day_night": "unknown"
+    },
+    {
+      "file": "D1.mp4",
+      "source": "DJI2",
+      "path": "/Volumes/LQ1000/DJI2/D1.mp4",
+      "duration_min": 11.3,
+      "size_gb": 0.34,
+      "day_night": "day"
+    },
+    {
+      "file": "D2.mp4",
+      "source": "DJI2",
+      "path": "/Volumes/LQ1000/DJI2/D2.mp4",
+      "duration_min": 28.8,
+      "size_gb": 0.36,
+      "day_night": "day"
+    },
+    {
+      "file": "D3.mp4",
+      "source": "DJI2",
+      "path": "/Volumes/LQ1000/DJI2/D3.mp4",
+      "duration_min": 0.6,
+      "size_gb": 0.04,
+      "day_night": "day"
+    },
+    {
+      "file": "D4.mp4",
+      "source": "DJI2",
+      "path": "/Volumes/LQ1000/DJI2/D4.mp4",
+      "duration_min": 8.4,
+      "size_gb": 0.11,
+      "day_night": "day"
+    },
+    {
+      "file": "D5.mp4",
+      "source": "DJI2",
+      "path": "/Volumes/LQ1000/DJI2/D5.mp4",
+      "duration_min": 8.7,
+      "size_gb": 0.11,
+      "day_night": "day"
+    },
+    {
+      "file": "D6.mp4",
+      "source": "DJI2",
+      "path": "/Volumes/LQ1000/DJI2/D6.mp4",
+      "duration_min": 3.9,
+      "size_gb": 0.05,
+      "day_night": "day"
+    },
+    {
+      "file": "N6.mp4",
+      "source": "DJI2",
+      "path": "/Volumes/LQ1000/DJI2/N6.mp4",
+      "duration_min": 5.6,
+      "size_gb": 0.07,
+      "day_night": "night"
+    },
+    {
+      "file": "N7.mp4",
+      "source": "DJI2",
+      "path": "/Volumes/LQ1000/DJI2/N7.mp4",
+      "duration_min": 4.4,
+      "size_gb": 0.06,
+      "day_night": "night"
+    },
+    {
+      "file": "N8.mp4",
+      "source": "DJI2",
+      "path": "/Volumes/LQ1000/DJI2/N8.mp4",
+      "duration_min": 12.0,
+      "size_gb": 0.14,
+      "day_night": "night"
+    }
+  ],
+  "summary": {
+    "total_videos": 26,
+    "total_minutes": 483.1,
+    "total_gb": 41.45,
+    "day_videos": 15,
+    "day_minutes": 322.7,
+    "night_videos": 10,
+    "night_minutes": 152.0,
+    "by_date": {
+      "2025-04-30": {
+        "count": 4,
+        "duration": 74.60000000000001
+      },
+      "2025-05-18": {
+        "count": 1,
+        "duration": 36.8
+      },
+      "2025-06-02": {
+        "count": 2,
+        "duration": 67.0
+      },
+      "2025-06-21": {
+        "count": 4,
+        "duration": 100.3
+      },
+      "2025-06-22": {
+        "count": 2,
+        "duration": 29.9
+      },
+      "2025-07-05": {
+        "count": 3,
+        "duration": 82.4
+      },
+      "unknown": {
+        "count": 10,
+        "duration": 92.10000000000001
+      }
+    }
+  }
+}
